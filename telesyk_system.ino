@@ -176,9 +176,6 @@ void setup() {
  */
 void loop() {
   RtcDateTime currentTime = rtcObject.GetDateTime();
-  char str[15];
-
-  sprintf(str, "%d/%d/%d %d:%d:%d", currentTime.Year(), currentTime.Month(), currentTime.Day(), currentTime.Hour(), currentTime.Minute(), currentTime.Second());
 
   clockGen = millis();
 
@@ -186,12 +183,17 @@ void loop() {
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
-    lcd.setCursor(0, 0);
-    updateTime(currentTime);
 
     byte hourNum = currentTime.Hour();
     byte minuteNum = currentTime.Minute();
     byte secondNum = currentTime.Second();
+
+    
+    updateTime(hourNum, minuteNum, secondNum);
+
+    Serial.print(hourNum);
+    Serial.print(minuteNum);
+    Serial.println(secondNum);
 
     // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms    
     if ((hourNum == 3 && minuteNum == 0 && secondNum == 0)
@@ -201,9 +203,7 @@ void loop() {
      || (hourNum == 15 && minuteNum == 0 && secondNum == 0)
      || (hourNum == 18 && minuteNum == 0 && secondNum == 0)
      || (hourNum == 21 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 0 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 12 && minuteNum == 2 && secondNum == 0)
-     || (hourNum == 12 && minuteNum == 4 && secondNum == 0)){
+     || (hourNum == 0 && minuteNum == 0 && secondNum == 0)){
       dailyTempObj.getWeatherDailyCondition(hourNum);
       getSlideBottom(dailyTempObj);
     }
@@ -281,11 +281,8 @@ void updateSlider() {
 /**
  * UPDATE CLOCK
  */
-void updateTime(RtcDateTime currentTime) {
-  byte hourNum = currentTime.Hour();
-  byte minuteNum = currentTime.Minute();
-  byte secondNum = currentTime.Second();
-
+void updateTime(byte hourNum, byte minuteNum, byte secondNum) {
+  lcd.setCursor(0, 0);
   lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + ":" + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + ":" + String(secondNum < 10 ? "0" : "") + String(secondNum) + " ");
 }
 
