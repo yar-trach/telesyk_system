@@ -32,11 +32,12 @@ unsigned long clockGen = 0;
 unsigned long timeWeatherCurrentReq = 0;
 unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
+unsigned long timeClockBlink = 0;
 
 #define LED_PIN 2
 
 #define SLIDER_INTERVAL 2000 // 2 seconds
-#define CLOCK_INTERVAL 1000 // 1 second
+#define CLOCK_INTERVAL 60000 // 1 minute
 #define WEATHER_CURR_INTERVAL 600000 // 10 minutes
 
 WiFiServer server(80);
@@ -49,7 +50,8 @@ String slideTopRight1;
 String slideTopRight2;
 String slideTopRight3;
 
-int slide = 0;
+byte slide = 0;
+byte blink = 0;
 
 boolean alarm = false;
 
@@ -92,17 +94,23 @@ void setup() {
       Serial.print(")");
       Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
 
-      for (int i = 0; i < SSID_PASS; i += 2) {
-        if (WiFi.SSID(i) == ssidpass[i]) {
+      // Checking if available WiFi point available in list
+      for (int j = 0; j < SSID_PASS; j += 2) {
+        if (WiFi.SSID(i) == ssidpass[j]) {
+          Serial.print("Connecting to ");
+          Serial.println(ssidpass[j]);
+          lcd.setCursor(11, 0);
+          lcd.print(ssidpass[j]);
           if (WiFi.status() != WL_CONNECTED) {
-            WiFi.begin(ssidpass[i], ssidpass[i+1]);
+            WiFi.begin(ssidpass[j], ssidpass[j+1]);
           }
+          goto checkingStatus;
         }
       }
     }
   }
 
-  while (WiFi.status() != WL_CONNECTED) {
+  checkingStatus: while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
   }
@@ -179,31 +187,41 @@ void loop() {
 
   clockGen = millis();
 
-  // Show time (every second)
+  // Show time (every half second)
+  if (clockGen - timeClockBlink >= 500) {
+    timeClockBlink = clockGen;
+
+    lcd.setCursor(2, 0);
+    if (blink) {
+      lcd.print(":");
+    } else {
+      lcd.print(" ");
+    }
+    blink = !blink;
+  }
+      
+
+  // Show time (every minute)
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
-
     byte hourNum = currentTime.Hour();
     byte minuteNum = currentTime.Minute();
-    byte secondNum = currentTime.Second();
 
-    
-    updateTime(hourNum, minuteNum, secondNum);
+    updateTime(hourNum, minuteNum);
 
     Serial.print(hourNum);
-    Serial.print(minuteNum);
-    Serial.println(secondNum);
+    Serial.println(minuteNum);
 
     // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms    
-    if ((hourNum == 3 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 6 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 9 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 12 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 15 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 18 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 21 && minuteNum == 0 && secondNum == 0)
-     || (hourNum == 0 && minuteNum == 0 && secondNum == 0)){
+    if ((hourNum == 3 && minuteNum == 0)
+     || (hourNum == 6 && minuteNum == 0)
+     || (hourNum == 9 && minuteNum == 0)
+     || (hourNum == 12 && minuteNum == 0)
+     || (hourNum == 15 && minuteNum == 0)
+     || (hourNum == 18 && minuteNum == 0)
+     || (hourNum == 21 && minuteNum == 0)
+     || (hourNum == 0 && minuteNum == 0)){
       dailyTempObj.getWeatherDailyCondition(hourNum);
       getSlideBottom(dailyTempObj);
     }
@@ -266,7 +284,7 @@ void updateSlider() {
     case 2:
       lcd.setCursor(0, 1);
       lcd.print(slideBottom3 + "         ");
-
+ 
       lcd.setCursor(9, 0);
       lcd.print(slideTopRight3 + "  ");
     break;
@@ -281,9 +299,9 @@ void updateSlider() {
 /**
  * UPDATE CLOCK
  */
-void updateTime(byte hourNum, byte minuteNum, byte secondNum) {
+void updateTime(byte hourNum, byte minuteNum) {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + ":" + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + ":" + String(secondNum < 10 ? "0" : "") + String(secondNum) + " ");
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + ":" + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + "    ");
 }
 
 /**
