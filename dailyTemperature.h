@@ -24,26 +24,30 @@ class dailyTemperature {
     
   }
 
-  String* getDailyWeather() {
-    String arr[4] = {
-      "sdf",
-      "sdfsd",
-      "33rr3r",
-      "45h5h5"
-    };
-    return arr;
-  }
-
   String getCurrentTemp() {
     return String(tempCurrent > 0 ? "+" : "-") + String(tempCurrent < 10 ? "0" : "") + String(tempCurrent) + "C" + String((char)223);
+  }
+
+  String getCurrentHumidity() {
+    return "Hum" + String(currentHumidity) + "%";
   }
 
   String getCurrentWeather() {
     return currentWeather;
   }
 
-  String getCurrentHumidity() {
-    return "Hum" + String(currentHumidity) + "%";
+  String getMorDayTemp() {
+    return "MOR" + String(tempMorning > 0 ? "+" : "-") + String(tempMorning < 10 ? "0" : "") + String(tempMorning) + "C" + String((char)223)
+           + " DAY" + String(tempDay > 0 ? "+" : "-") + String(tempDay < 10 ? "0" : "") + String(tempDay) + "C" + String((char)223);
+  }
+
+  String getEveNigTemp() {
+    return "EVE" + String(tempEvening > 0 ? "+" : "-") + String(tempEvening < 10 ? "0" : "") + String(tempEvening) + "C" + String((char)223)
+           + " NIG" + String(tempNight > 0 ? "+" : "-") + String(tempNight < 10 ? "0" : "") + String(tempNight) + "C" + String((char)223);
+  }
+
+  String getWeatherDescription() {
+    return weatherDescription;
   }
 
   /**
@@ -105,8 +109,6 @@ class dailyTemperature {
         Serial.println("parseObject() failed");
         return;
       }
-
-      
 
       if ((time >= 3) && (time < 12)) {
         tempMorning = root["list"][0]["temp"]["morn"];

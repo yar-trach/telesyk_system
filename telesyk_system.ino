@@ -24,37 +24,32 @@ const char* ssidpass[SSID_PASS] = {
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-
 HTTPClient http;
 #include "dailyTemperature.h"
 #include "currentTime.h"
-
-
 
 unsigned long clockGen = 0;
 unsigned long timeWeatherCurrentReq = 0;
 unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
 
-#define ledPin 2
+#define LED_PIN 2
 
-#define sliderInterval 2000 // 2 seconds
-#define clockInterval 1000 // 1 second
-#define weatherCurrentReqInterval 600000 // 10 minutes
+#define SLIDER_INTERVAL 2000 // 2 seconds
+#define CLOCK_INTERVAL 1000 // 1 second
+#define WEATHER_CURR_INTERVAL 600000 // 10 minutes
 
 WiFiServer server(80);
 
-//String slideBottom1;
-//String slideBottom2;
-//String slideBottom3;
+String slideBottom1;
+String slideBottom2;
+String slideBottom3;
 
 String slideTopRight1;
 String slideTopRight2;
 String slideTopRight3;
 
 int slide = 0;
-
-String* test;
 
 boolean alarm = false;
 
@@ -72,8 +67,8 @@ void setup() {
   Serial.println("\nBooting");
 
   // Wifi LED   
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
     
   // LCD
   lcd.init();                     
@@ -125,18 +120,7 @@ void setup() {
   Serial.print("Server started at: ");
   Serial.println(WiFi.localIP());
 
-  
-  
-  dailyTempObj.getWeatherCurrentCondition();
-  slideTopRight1 = dailyTempObj.getCurrentTemp();
-  slideTopRight2 = dailyTempObj.getCurrentHumidity();
-  slideTopRight3 = dailyTempObj.getCurrentWeather();
-
-
-
-  
-  
-  
+  // Compiling RTC. or not
   rtcObject.Begin();
 
   RtcDateTime compiledDateTime(__DATE__, __TIME__);
@@ -157,7 +141,7 @@ void setup() {
     }
   } else {
     RtcDateTime loadingTime(currentTimeObj.getLocalTime());
-    Serial.print("loadingTime >>>");
+    Serial.print("loadingTime>>>");
     Serial.println(loadingTime);
 
     RtcDateTime currentTime = rtcObject.GetDateTime();
@@ -174,30 +158,22 @@ void setup() {
       Serial.println("Time is fine!");
     }
   }
-
-//  int loadingTime = currentTimeObj.getLocalTime();
-//  rtcObject.SetDateTime(loadingTime - TIME_DIFF_2000);
-  
-
+ 
+  // Get current time
   RtcDateTime currentTime = rtcObject.GetDateTime();
+  
+  // Get current weather condition
+  dailyTempObj.getWeatherCurrentCondition();
+  getSlideTopRight(dailyTempObj);
+  
+  // Get daily weather
   dailyTempObj.getWeatherDailyCondition(currentTime.Hour());
-
-    test = dailyTempObj.getDailyWeather();
-  for (int i = 0; i < sizeof(test); i++) {
-    Serial.println(String(test[i]));
-  }
+  getSlideBottom(dailyTempObj);
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * MAIN BODY OF SCATCH
+ */
 void loop() {
   RtcDateTime currentTime = rtcObject.GetDateTime();
   char str[15];
@@ -207,53 +183,65 @@ void loop() {
   clockGen = millis();
 
   // Show time (every second)
-  if (clockGen - timeClockUpd >= clockInterval) {
+  if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
     lcd.setCursor(0, 0);
     updateTime(currentTime);
-//    Serial.println(str);
+
+    byte hourNum = currentTime.Hour();
+    byte minuteNum = currentTime.Minute();
+    byte secondNum = currentTime.Second();
 
     // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms    
-    if ((currentTime.Hour() == 3 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 6 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 9 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 12 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 15 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 18 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 21 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 0 && currentTime.Minute() == 0 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 12 && currentTime.Minute() == 2 && currentTime.Second() == 0)
-     || (currentTime.Hour() == 12 && currentTime.Minute() == 4 && currentTime.Second() == 0)){
-      Serial.println("<<<>>>");
-      alarmT(currentTime.Hour());
+    if ((hourNum == 3 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 6 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 9 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 12 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 15 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 18 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 21 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 0 && minuteNum == 0 && secondNum == 0)
+     || (hourNum == 12 && minuteNum == 2 && secondNum == 0)
+     || (hourNum == 12 && minuteNum == 4 && secondNum == 0)){
+      dailyTempObj.getWeatherDailyCondition(hourNum);
+      getSlideBottom(dailyTempObj);
     }
   }
 
   // Update slider info (every two seconds)
-  if (clockGen - timeSliderUpd >= sliderInterval) {
+  if (clockGen - timeSliderUpd >= SLIDER_INTERVAL) {
     timeSliderUpd = clockGen;
 
     updateSlider();
   }
 
   // Updating current weather (every 10 minutes)
-  if (clockGen - timeWeatherCurrentReq >= weatherCurrentReqInterval) {
+  if (clockGen - timeWeatherCurrentReq >= WEATHER_CURR_INTERVAL) {
     timeWeatherCurrentReq = clockGen;
 
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
-    slideTopRight1 = dailyTempObj.getCurrentTemp();
-    slideTopRight2 = dailyTempObj.getCurrentHumidity();
-    slideTopRight3 = dailyTempObj.getCurrentWeather();
+    getSlideTopRight(dailyTempObj);
   }
 
   // connecting to wifi client
   wifiClient();
 }
+/**
+ * END MAIN BODY OF SCATCH
+ */
 
-void alarmT(byte hourT) {
-  Serial.println(hourT);
+void getSlideTopRight(dailyTemperature dailyTempObj) {
+  slideTopRight1 = dailyTempObj.getCurrentTemp();
+  slideTopRight2 = dailyTempObj.getCurrentHumidity();
+  slideTopRight3 = dailyTempObj.getCurrentWeather();
+}
+
+void getSlideBottom(dailyTemperature dailyTempObj) {
+  slideBottom1 = dailyTempObj.getMorDayTemp();
+  slideBottom2 = dailyTempObj.getEveNigTemp();
+  slideBottom3 = dailyTempObj.getWeatherDescription();
 }
 
 /**
@@ -262,22 +250,22 @@ void alarmT(byte hourT) {
 void updateSlider() {
   switch (slide) {
     case 0:
-//      lcd.setCursor(0, 1);
-//      lcd.print(slideBottom1);
+      lcd.setCursor(0, 1);
+      lcd.print(slideBottom1);
 
       lcd.setCursor(9, 0);
       lcd.print(slideTopRight1 + "  ");
     break;
     case 1:
-//      lcd.setCursor(0, 1);
-//      lcd.print(slideBottom2);
+      lcd.setCursor(0, 1);
+      lcd.print(slideBottom2);
 
       lcd.setCursor(9, 0);
       lcd.print(slideTopRight2 + "  ");
     break;
     case 2:
-//      lcd.setCursor(0, 1);
-//      lcd.print(slideBottom3 + "         ");
+      lcd.setCursor(0, 1);
+      lcd.print(slideBottom3 + "         ");
 
       lcd.setCursor(9, 0);
       lcd.print(slideTopRight3 + "  ");
@@ -294,9 +282,9 @@ void updateSlider() {
  * UPDATE CLOCK
  */
 void updateTime(RtcDateTime currentTime) {
-  int hourNum = currentTime.Hour();
-  int minuteNum = currentTime.Minute();
-  int secondNum = currentTime.Second();
+  byte hourNum = currentTime.Hour();
+  byte minuteNum = currentTime.Minute();
+  byte secondNum = currentTime.Second();
 
   lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + ":" + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + ":" + String(secondNum < 10 ? "0" : "") + String(secondNum) + " ");
 }
@@ -327,11 +315,11 @@ void wifiClient() {
   // Match the request
   int value = LOW;
   if (request.indexOf("/LED=ON") != -1)  {
-    digitalWrite(ledPin, LOW);
+    digitalWrite(LED_PIN, LOW);
     value = HIGH;
   }
   if (request.indexOf("/LED=OFF") != -1)  {
-    digitalWrite(ledPin, HIGH);
+    digitalWrite(LED_PIN, HIGH);
     value = LOW;
   }
   
