@@ -32,12 +32,11 @@ unsigned long clockGen = 0;
 unsigned long timeWeatherCurrentReq = 0;
 unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
-unsigned long timeClockBlink = 0;
 
 #define LED_PIN 2
 
 #define SLIDER_INTERVAL 2000 // 2 seconds
-#define CLOCK_INTERVAL 60000 // 1 minute
+#define CLOCK_INTERVAL 1000 // 1 second
 #define WEATHER_CURR_INTERVAL 600000 // 10 minutes
 
 WiFiServer server(80);
@@ -52,8 +51,6 @@ String slideTopRight3;
 
 byte slide = 0;
 byte blink = 0;
-
-boolean alarm = false;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -76,14 +73,16 @@ void setup() {
   lcd.init();                     
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("CONNECTING");
+  lcd.print("SEARCHING WIFI  ");
 
   // Connect to WiFi network
-  int n = WiFi.scanNetworks();
+  char n = WiFi.scanNetworks();
   Serial.println("scan done");
 
   if (n == 0) {
     Serial.println("No networks found");
+    lcd.setCursor(0, 0);
+    lcd.print("NO WIFI FOUND   ");
   } else {
     for (int i = 0; i < n; i++) {
       Serial.print(i + 1);
@@ -99,8 +98,12 @@ void setup() {
         if (WiFi.SSID(i) == ssidpass[j]) {
           Serial.print("Connecting to ");
           Serial.println(ssidpass[j]);
-          lcd.setCursor(11, 0);
+
+          lcd.setCursor(0, 0);
+          lcd.print("CONNECTING TO   ");
+          lcd.setCursor(0, 1);
           lcd.print(ssidpass[j]);
+          
           if (WiFi.status() != WL_CONNECTED) {
             WiFi.begin(ssidpass[j], ssidpass[j+1]);
           }
@@ -187,9 +190,18 @@ void loop() {
 
   clockGen = millis();
 
-  // Show time (every half second)
-  if (clockGen - timeClockBlink >= 500) {
-    timeClockBlink = clockGen;
+  // Show time (every minute)
+  if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
+    timeClockUpd = clockGen;
+
+    byte hourNum = currentTime.Hour();
+    byte minuteNum = currentTime.Minute();
+    byte secondNum = currentTime.Second();
+
+    if (secondNum == 0) {
+      updateTime(hourNum, minuteNum);
+      
+    }
 
     lcd.setCursor(2, 0);
     if (blink) {
@@ -198,20 +210,6 @@ void loop() {
       lcd.print(" ");
     }
     blink = !blink;
-  }
-      
-
-  // Show time (every minute)
-  if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
-    timeClockUpd = clockGen;
-
-    byte hourNum = currentTime.Hour();
-    byte minuteNum = currentTime.Minute();
-
-    updateTime(hourNum, minuteNum);
-
-    Serial.print(hourNum);
-    Serial.println(minuteNum);
 
     // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms    
     if ((hourNum == 3 && minuteNum == 0)
@@ -301,7 +299,7 @@ void updateSlider() {
  */
 void updateTime(byte hourNum, byte minuteNum) {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + ":" + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + "    ");
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + " " + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + "    ");
 }
 
 /**
