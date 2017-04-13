@@ -50,7 +50,7 @@ String slideTopRight2;
 String slideTopRight3;
 
 byte slide = 0;
-byte blink = 0;
+byte blink = 1;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -76,7 +76,7 @@ void setup() {
   lcd.print("SEARCHING WIFI  ");
 
   // Connect to WiFi network
-  char n = WiFi.scanNetworks();
+  byte n = WiFi.scanNetworks();
   Serial.println("scan done");
 
   if (n == 0) {
@@ -84,7 +84,7 @@ void setup() {
     lcd.setCursor(0, 0);
     lcd.print("NO WIFI FOUND   ");
   } else {
-    for (int i = 0; i < n; i++) {
+    for (byte i = 0; i < n; i++) {
       Serial.print(i + 1);
       Serial.print(": ");
       Serial.print(WiFi.SSID(i));
@@ -94,7 +94,7 @@ void setup() {
       Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
 
       // Checking if available WiFi point available in list
-      for (int j = 0; j < SSID_PASS; j += 2) {
+      for (byte j = 0; j < SSID_PASS; j += 2) {
         if (WiFi.SSID(i) == ssidpass[j]) {
           Serial.print("Connecting to ");
           Serial.println(ssidpass[j]);
@@ -172,6 +172,14 @@ void setup() {
  
   // Get current time
   RtcDateTime currentTime = rtcObject.GetDateTime();
+
+  delay(1000);
+  lcd.clear();
+  
+  byte hourNum = currentTime.Hour();
+  byte minuteNum = currentTime.Minute();
+  updateTime(hourNum, minuteNum);
+
   
   // Get current weather condition
   dailyTempObj.getWeatherCurrentCondition();
@@ -200,7 +208,6 @@ void loop() {
 
     if (secondNum == 0) {
       updateTime(hourNum, minuteNum);
-      
     }
 
     lcd.setCursor(2, 0);
@@ -299,7 +306,10 @@ void updateSlider() {
  */
 void updateTime(byte hourNum, byte minuteNum) {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + " " + String(minuteNum < 10 ? "0" : "") + String(minuteNum) + "    ");
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum));
+  
+  lcd.setCursor(3, 0);
+  lcd.print(String(minuteNum < 10 ? "0" : "") + String(minuteNum));
 }
 
 /**

@@ -9,15 +9,15 @@
 
 class dailyTemperature {
   private:
-  int tempCurrent = 0;
-  int tempMorning = 0;
-  int tempDay = 0;
-  int tempEvening = 0;
-  int tempNight = 0;
+  byte tempCurrent = 0;
+  byte tempMorning = 0;
+  byte tempDay = 0;
+  byte tempEvening = 0;
+  byte tempNight = 0;
 
   String currentWeather;
   String weatherDescription;
-  int currentHumidity;
+  byte currentHumidity;
 
   public:
   dailyTemperature() {
