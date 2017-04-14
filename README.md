@@ -1,2 +1,2 @@
 # Telesyk-System-Arduino
-![alt tag](scheme_bb.png)
+![alt tag](scheme/scheme_bb.png)

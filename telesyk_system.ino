@@ -33,7 +33,10 @@ unsigned long timeWeatherCurrentReq = 0;
 unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
 
-#define LED_PIN 2
+#define ONBOARD_LED_PIN 2
+#define RED_LED_PIN D5
+#define GREEN_LED_PIN D6
+#define BLUE_LED_PIN D7
 
 #define SLIDER_INTERVAL 2000 // 2 seconds
 #define CLOCK_INTERVAL 1000 // 1 second
@@ -54,7 +57,7 @@ byte blink = 1;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-dailyTemperature dailyTempObj = dailyTemperature();
+dailyTemperature dailyTempObj = dailyTemperature(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -66,8 +69,12 @@ void setup() {
   Serial.println("\nBooting");
 
   // Wifi LED   
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+  pinMode(ONBOARD_LED_PIN, OUTPUT);
+  digitalWrite(ONBOARD_LED_PIN, !HIGH);
+
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BLUE_LED_PIN, OUTPUT);
     
   // LCD
   lcd.init();                     
@@ -198,7 +205,7 @@ void loop() {
 
   clockGen = millis();
 
-  // Show time (every minute)
+  // Show time (every second)
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
@@ -208,6 +215,14 @@ void loop() {
 
     if (secondNum == 0) {
       updateTime(hourNum, minuteNum);
+
+      if (minuteNum == 0) {
+        // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
+        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
+          dailyTempObj.getWeatherDailyCondition(hourNum);
+          getSlideBottom(dailyTempObj);
+        }
+      }
     }
 
     lcd.setCursor(2, 0);
@@ -217,19 +232,6 @@ void loop() {
       lcd.print(" ");
     }
     blink = !blink;
-
-    // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms    
-    if ((hourNum == 3 && minuteNum == 0)
-     || (hourNum == 6 && minuteNum == 0)
-     || (hourNum == 9 && minuteNum == 0)
-     || (hourNum == 12 && minuteNum == 0)
-     || (hourNum == 15 && minuteNum == 0)
-     || (hourNum == 18 && minuteNum == 0)
-     || (hourNum == 21 && minuteNum == 0)
-     || (hourNum == 0 && minuteNum == 0)){
-      dailyTempObj.getWeatherDailyCondition(hourNum);
-      getSlideBottom(dailyTempObj);
-    }
   }
 
   // Update slider info (every two seconds)
@@ -254,6 +256,12 @@ void loop() {
 /**
  * END MAIN BODY OF SCATCH
  */
+
+void changeColor(byte red, byte green, byte blue) {
+    analogWrite(RED_LED_PIN, red);
+    analogWrite(GREEN_LED_PIN, green);
+    analogWrite(BLUE_LED_PIN, blue);
+  }
 
 void getSlideTopRight(dailyTemperature dailyTempObj) {
   slideTopRight1 = dailyTempObj.getCurrentTemp();
@@ -338,11 +346,11 @@ void wifiClient() {
   // Match the request
   int value = LOW;
   if (request.indexOf("/LED=ON") != -1)  {
-    digitalWrite(LED_PIN, LOW);
+    digitalWrite(ONBOARD_LED_PIN, LOW);
     value = HIGH;
   }
   if (request.indexOf("/LED=OFF") != -1)  {
-    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(ONBOARD_LED_PIN, HIGH);
     value = LOW;
   }
   
