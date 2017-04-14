@@ -58,7 +58,7 @@ class currentTime {
     
     http.begin(req);
     int httpCode = http.GET();
-    if (httpCode > 0) {
+    if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
       String response = http.getString();
       Serial.println(response);
   
