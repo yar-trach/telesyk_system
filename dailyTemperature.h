@@ -43,43 +43,9 @@ class dailyTemperature {
   char _GREEN_LED_PIN;
   char _BLUE_LED_PIN;
 
-  public:
-  dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN) {
-    pinMode(RED_LED_PIN, OUTPUT);
-    pinMode(GREEN_LED_PIN, OUTPUT);
-    pinMode(BLUE_LED_PIN, OUTPUT);
-
-    _RED_LED_PIN = RED_LED_PIN;
-    _GREEN_LED_PIN = GREEN_LED_PIN;
-    _BLUE_LED_PIN = BLUE_LED_PIN;
-  }
-
-  String getCurrentTemp() {
-    return String(tempCurrent > 0 ? "+" : "-") + String(tempCurrent < 10 ? "0" : "") + String(tempCurrent) + "C" + String((char)223);
-  }
-
-  String getCurrentHumidity() {
-    return "Hum" + String(currentHumidity) + "%";
-  }
-
-  String getCurrentWeather() {
-    return currentWeather;
-  }
-
-  String getMorDayTemp() {
-    return "MOR" + String(tempMorning > 0 ? "+" : "-") + String(tempMorning < 10 ? "0" : "") + String(tempMorning) + "C" + String((char)223)
-           + " DAY" + String(tempDay > 0 ? "+" : "-") + String(tempDay < 10 ? "0" : "") + String(tempDay) + "C" + String((char)223);
-  }
-
-  String getEveNigTemp() {
-    return "EVE" + String(tempEvening > 0 ? "+" : "-") + String(tempEvening < 10 ? "0" : "") + String(tempEvening) + "C" + String((char)223)
-           + " NIG" + String(tempNight > 0 ? "+" : "-") + String(tempNight < 10 ? "0" : "") + String(tempNight) + "C" + String((char)223);
-  }
-
-  String getWeatherDescription() {
-    return weatherDescription;
-  }
-  
+  /**
+   * SETTING COLOR OF LED INDICATOR
+   */
   void changeColor() {
     unsigned char red;
     unsigned char green;
@@ -119,6 +85,43 @@ class dailyTemperature {
     analogWrite(_RED_LED_PIN, red);
     analogWrite(_GREEN_LED_PIN, green);
     analogWrite(_BLUE_LED_PIN, blue);
+  }
+
+  public:
+  dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN) {
+    pinMode(RED_LED_PIN, OUTPUT);
+    pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(BLUE_LED_PIN, OUTPUT);
+
+    _RED_LED_PIN = RED_LED_PIN;
+    _GREEN_LED_PIN = GREEN_LED_PIN;
+    _BLUE_LED_PIN = BLUE_LED_PIN;
+  }
+
+  String getCurrentTemp() {
+    return String(tempCurrent > 0 ? "+" : "-") + String(tempCurrent < 10 ? "0" : "") + String(tempCurrent) + "C" + String((char)223);
+  }
+
+  String getCurrentHumidity() {
+    return "Hum" + String(currentHumidity) + "%";
+  }
+
+  String getCurrentWeather() {
+    return currentWeather;
+  }
+
+  String getMorDayTemp() {
+    return "MOR" + String(tempMorning > 0 ? "+" : "-") + String(tempMorning < 10 ? "0" : "") + String(tempMorning) + "C" + String((char)223)
+           + " DAY" + String(tempDay > 0 ? "+" : "-") + String(tempDay < 10 ? "0" : "") + String(tempDay) + "C" + String((char)223);
+  }
+
+  String getEveNigTemp() {
+    return "EVE" + String(tempEvening > 0 ? "+" : "-") + String(tempEvening < 10 ? "0" : "") + String(tempEvening) + "C" + String((char)223)
+           + " NIG" + String(tempNight > 0 ? "+" : "-") + String(tempNight < 10 ? "0" : "") + String(tempNight) + "C" + String((char)223);
+  }
+
+  String getWeatherDescription() {
+    return weatherDescription;
   }
 
   /**

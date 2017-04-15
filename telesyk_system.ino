@@ -10,11 +10,12 @@ const char* ssidpass[SSID_PASS] = {
   "..." // password of second point
 };
  */
+
 #include "ssidpassword.h"
 
 #include <RtcDateTime.h>
 #include <RtcUtility.h>
-#include <RtcDS3231.h>
+#include <RtcDS3231.h> // https://github.com/Makuna/Rtc
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -32,15 +33,18 @@ unsigned long clockGen = 0;
 unsigned long timeWeatherCurrentReq = 0;
 unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
+unsigned long btnLastPress = 0;
 
-#define ONBOARD_LED_PIN 2
-#define RED_LED_PIN D5
-#define GREEN_LED_PIN D6
-#define BLUE_LED_PIN D7
+#define ONBOARD_LED_PIN   2
+#define RED_LED_PIN       D5
+#define GREEN_LED_PIN     D6
+#define BLUE_LED_PIN      D7
+#define BTN_SWITCH_PIN    D3
 
-#define SLIDER_INTERVAL 2000 // 2 seconds
-#define CLOCK_INTERVAL 1000 // 1 second
-#define WEATHER_CURR_INTERVAL 600000 // 10 minutes
+#define SLIDER_INTERVAL         2000    // 2 sec
+#define CLOCK_INTERVAL          1000    // 1 sec
+#define WEATHER_CURR_INTERVAL   600000  // 10 min
+#define BTN_DEBOUNCE_TIME       200     // .2 sec
 
 WiFiServer server(80);
 
@@ -53,7 +57,9 @@ String slideTopRight2;
 String slideTopRight3;
 
 byte slide = 0;
-byte blink = 1;
+byte slideLocalInfo = 0;
+boolean blink = 1;
+boolean btnFlag = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -61,6 +67,12 @@ dailyTemperature dailyTempObj = dailyTemperature(RED_LED_PIN, GREEN_LED_PIN, BLU
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
+RtcDateTime rtcExactTime;
+RtcTemperature rtcTemperature = rtcObject.GetTemperature();
+
+byte hourNum;
+byte minuteNum;
+byte secondNum;
 
 void setup() {
   Serial.begin(115200);
@@ -72,9 +84,8 @@ void setup() {
   pinMode(ONBOARD_LED_PIN, OUTPUT);
   digitalWrite(ONBOARD_LED_PIN, !HIGH);
 
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(BLUE_LED_PIN, OUTPUT);
+  // Button
+  pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
     
   // LCD
   lcd.init();                     
@@ -82,10 +93,11 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print("SEARCHING WIFI  ");
 
-  // Connect to WiFi network
+  // Scanning WiFi network
   byte n = WiFi.scanNetworks();
   Serial.println("scan done");
 
+  // Connect to WiFi network
   if (n == 0) {
     Serial.println("No networks found");
     lcd.setCursor(0, 0);
@@ -116,9 +128,9 @@ void setup() {
           }
           goto checkingStatus;
         }
-      }
+      } // END OF Checking if available WiFi point available in list
     }
-  }
+  } // END OF Connect to WiFi network
 
   checkingStatus: while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -138,15 +150,17 @@ void setup() {
   Serial.print("Server started at: ");
   Serial.println(WiFi.localIP());
 
-  // Compiling RTC. or not
+  // Compiling RTC. Or not
   rtcObject.Begin();
 
   RtcDateTime compiledDateTime(__DATE__, __TIME__);
   Serial.print("compiledDateTime>>>");
   Serial.println(compiledDateTime);
 
+  RtcDateTime loadingTime(currentTimeObj.getLocalTime());
+
+  // Checking if RTC has valid time. If not - set RTC exact time
   if(!rtcObject.IsDateTimeValid()) {
-    RtcDateTime loadingTime(currentTimeObj.getLocalTime());
     Serial.print("loadingTime>>>");
     Serial.println(loadingTime);
 
@@ -158,42 +172,42 @@ void setup() {
       rtcObject.SetDateTime(compiledDateTime - TIME_DIFF_2000);
     }
   } else {
-    RtcDateTime loadingTime(currentTimeObj.getLocalTime());
     Serial.print("loadingTime>>>");
     Serial.println(loadingTime);
 
-    RtcDateTime currentTime = rtcObject.GetDateTime();
-    Serial.print("currentTime>>>");
-    Serial.println(currentTime);
+    rtcExactTime = rtcObject.GetDateTime();
+    Serial.print("rtcExactTime>>>");
+    Serial.println(rtcExactTime);
 
     Serial.print("CHECKING>>");
-    Serial.println(abs((loadingTime - TIME_DIFF_2000) - currentTime) > 100);
+    Serial.println(abs((loadingTime - TIME_DIFF_2000) - rtcExactTime) > 100);
     
-    if ((loadingTime > 0) && (abs((loadingTime - TIME_DIFF_2000) - currentTime) > 100)) {
+    if ((loadingTime > 0) && (abs((loadingTime - TIME_DIFF_2000) - rtcExactTime) > 100)) {
       Serial.println("Setting up timepoint from Internet");
       rtcObject.SetDateTime(loadingTime - TIME_DIFF_2000);
     } else {
       Serial.println("Time is fine!");
     }
-  }
+  } // END OF Checking if RTC has valid time. If not - set RTC exact time
  
   // Get current time
-  RtcDateTime currentTime = rtcObject.GetDateTime();
+  rtcExactTime = rtcObject.GetDateTime();
+  hourNum = rtcExactTime.Hour();
+  minuteNum = rtcExactTime.Minute();
+  rtcTemperature = rtcObject.GetTemperature();
 
+  // Show connection info for 1 sec
   delay(1000);
   lcd.clear();
   
-  byte hourNum = currentTime.Hour();
-  byte minuteNum = currentTime.Minute();
-  updateTime(hourNum, minuteNum);
+  showTime();
 
-  
   // Get current weather condition
   dailyTempObj.getWeatherCurrentCondition();
   getSlideTopRight(dailyTempObj);
   
   // Get daily weather
-  dailyTempObj.getWeatherDailyCondition(currentTime.Hour());
+  dailyTempObj.getWeatherDailyCondition(hourNum);
   getSlideBottom(dailyTempObj);
 }
 
@@ -201,20 +215,41 @@ void setup() {
  * MAIN BODY OF SCATCH
  */
 void loop() {
-  RtcDateTime currentTime = rtcObject.GetDateTime();
-
   clockGen = millis();
+
+  // Button handler
+  boolean btn = !digitalRead(BTN_SWITCH_PIN);
+  if (btn == 1 && btnFlag == 0 && clockGen - btnLastPress > BTN_DEBOUNCE_TIME) {
+    btnFlag = 1;
+    slideLocalInfo = !slideLocalInfo;
+    btnLastPress = clockGen;
+
+    if (slideLocalInfo == 0) {
+      showTime();
+    } else if (slideLocalInfo == 1) {
+      showTemperature();
+    }
+  } else if (btn == 0 && btnFlag == 1) {
+    btnFlag = 0;
+  } // END OF Button handler
 
   // Show time (every second)
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
-    byte hourNum = currentTime.Hour();
-    byte minuteNum = currentTime.Minute();
-    byte secondNum = currentTime.Second();
+    // Update time
+    rtcExactTime = rtcObject.GetDateTime();
+    hourNum = rtcExactTime.Hour();
+    minuteNum = rtcExactTime.Minute();
+    secondNum = rtcExactTime.Second();
 
     if (secondNum == 0) {
-      updateTime(hourNum, minuteNum);
+      if (slideLocalInfo == 0) {
+        showTime();
+      } else if (slideLocalInfo == 1) {
+        rtcTemperature = rtcObject.GetTemperature();
+        showTemperature();
+      }
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
@@ -225,21 +260,19 @@ void loop() {
       }
     }
 
-    lcd.setCursor(2, 0);
-    if (blink) {
-      lcd.print(":");
-    } else {
-      lcd.print(" ");
+    if (slideLocalInfo == 0) {
+      lcd.setCursor(2, 0);
+      lcd.print(blink ? ":" : " ");
+      blink = !blink;
     }
-    blink = !blink;
-  }
+  } // END OF Show time (every second)
 
   // Update slider info (every two seconds)
   if (clockGen - timeSliderUpd >= SLIDER_INTERVAL) {
     timeSliderUpd = clockGen;
 
     updateSlider();
-  }
+  } // END OF Update slider info (every two seconds)
 
   // Updating current weather (every 10 minutes)
   if (clockGen - timeWeatherCurrentReq >= WEATHER_CURR_INTERVAL) {
@@ -248,7 +281,7 @@ void loop() {
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
     getSlideTopRight(dailyTempObj);
-  }
+  } // END OF Updating current weather (every 10 minutes)
 
   // connecting to wifi client
   wifiClient();
@@ -256,12 +289,6 @@ void loop() {
 /**
  * END MAIN BODY OF SCATCH
  */
-
-void changeColor(byte red, byte green, byte blue) {
-    analogWrite(RED_LED_PIN, red);
-    analogWrite(GREEN_LED_PIN, green);
-    analogWrite(BLUE_LED_PIN, blue);
-  }
 
 void getSlideTopRight(dailyTemperature dailyTempObj) {
   slideTopRight1 = dailyTempObj.getCurrentTemp();
@@ -310,14 +337,19 @@ void updateSlider() {
 }
 
 /**
- * UPDATE CLOCK
+ * SHOWING TIME
  */
-void updateTime(byte hourNum, byte minuteNum) {
+void showTime() {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum));
-  
-  lcd.setCursor(3, 0);
-  lcd.print(String(minuteNum < 10 ? "0" : "") + String(minuteNum));
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blink ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
+}
+
+/**
+ * SHOWING TEMPERATURE
+ */
+void showTemperature() {
+  lcd.setCursor(0, 0);
+  lcd.print(String(rtcTemperature.AsWholeDegrees() > 0 ? "+" : "-") + String(rtcTemperature.AsWholeDegrees() < 10 ? "0" : "") + rtcTemperature.AsWholeDegrees() + "C" + String((char)223));
 }
 
 /**
