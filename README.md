@@ -9,7 +9,8 @@
 >* Breadboard           - dev board
 >* Button               - button for switching between modes
 >* RGB LED              - RGB LED for color indication
->* 3x220R               - current limiting resistors for RGB LED
+>* photocell            - photoelements to measure light intensity
+>* 4x220R               - current limiting resistors for RGB LED and pulldown resistor for photocell
 >* Wires                - connection between modules and power supply
 
 ![alt tag](scheme/scheme_bb.png)
