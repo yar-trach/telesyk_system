@@ -35,11 +35,12 @@ unsigned long timeSliderUpd = 0;
 unsigned long timeClockUpd = 0;
 unsigned long btnLastPress = 0;
 
-#define ONBOARD_LED_PIN   2
-#define RED_LED_PIN       D5
-#define GREEN_LED_PIN     D6
-#define BLUE_LED_PIN      D7
-#define BTN_SWITCH_PIN    D3
+#define ONBOARD_LED_PIN     2
+#define POTENTIOMETER_PIN   A0
+#define RED_LED_PIN         D5
+#define GREEN_LED_PIN       D6
+#define BLUE_LED_PIN        D7
+#define BTN_SWITCH_PIN      D3
 
 #define SLIDER_INTERVAL         2000    // 2 sec
 #define CLOCK_INTERVAL          1000    // 1 sec
@@ -51,13 +52,16 @@ WiFiServer server(80);
 String slideBottom1;
 String slideBottom2;
 String slideBottom3;
-
 String slideTopRight1;
 String slideTopRight2;
 String slideTopRight3;
 
 byte slide = 0;
 byte slideLocalInfo = 0;
+byte hourNum;
+byte minuteNum;
+byte secondNum;
+
 boolean blink = 1;
 boolean btnFlag = 0;
 
@@ -70,10 +74,6 @@ RtcDS3231<TwoWire> rtcObject(Wire);
 RtcDateTime rtcExactTime;
 RtcTemperature rtcTemperature = rtcObject.GetTemperature();
 
-byte hourNum;
-byte minuteNum;
-byte secondNum;
-
 void setup() {
   Serial.begin(115200);
   delay(10);
@@ -83,6 +83,9 @@ void setup() {
   // Wifi LED   
   pinMode(ONBOARD_LED_PIN, OUTPUT);
   digitalWrite(ONBOARD_LED_PIN, !HIGH);
+
+  // Potentiometer
+  pinMode(POTENTIOMETER_PIN, INPUT);
 
   // Button
   pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
@@ -233,9 +236,11 @@ void loop() {
     btnFlag = 0;
   } // END OF Button handler
 
-  // Show time (every second)
+  // Every second cycle
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
+
+    Serial.println(analogRead(POTENTIOMETER_PIN));
 
     // Update time
     rtcExactTime = rtcObject.GetDateTime();
@@ -265,14 +270,14 @@ void loop() {
       lcd.print(blink ? ":" : " ");
       blink = !blink;
     }
-  } // END OF Show time (every second)
+  } // END OF Every second cycle
 
-  // Update slider info (every two seconds)
+  // Every 2 seconds cycle
   if (clockGen - timeSliderUpd >= SLIDER_INTERVAL) {
     timeSliderUpd = clockGen;
 
     updateSlider();
-  } // END OF Update slider info (every two seconds)
+  } // END OF Every 2 seconds cycle
 
   // Updating current weather (every 10 minutes)
   if (clockGen - timeWeatherCurrentReq >= WEATHER_CURR_INTERVAL) {
