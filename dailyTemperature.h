@@ -127,7 +127,7 @@ class dailyTemperature {
   /**
    * GETTINT CURRENT WEATHER CONDITION
    */
-  void getWeatherCurrentCondition() {
+  boolean getWeatherCurrentCondition() {
     Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
 
     char req[125];
@@ -148,13 +148,14 @@ class dailyTemperature {
   
       if (!root.success()) {
         Serial.println("parseObject() failed");
-        return;
+        return 0;
       }
       tempCurrent = root["main"]["temp"];
       currentHumidity = root["main"]["humidity"];
       currentWeather = String((const char*)root["weather"][0]["main"]);
 
       changeColor();
+      return 1;
     }
     http.end();
   }

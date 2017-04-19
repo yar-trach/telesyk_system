@@ -7,7 +7,7 @@ const char* ssidpass[SSID_PASS] = {
   "...", // password of first point
   
   "...", // ssid name of second point
-  "..." // password of second point
+  "..."  // password of second point
 };
  */
 
@@ -144,9 +144,10 @@ void setup() {
 
   checkingStatus: while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
+    
+    blinkOnboardLed();
+    
     delay(500);
-    busyFlag = !busyFlag;
-    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
   }
   
   checkBusy();
@@ -175,8 +176,8 @@ void setup() {
   while(!localTimeRespond) {
     localTimeRespond = currentTimeObj.getLocalTime();
     
-    busyFlag = !busyFlag;
-    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+    blinkOnboardLed();
+    
     numberOfTry++;
     if (numberOfTry == 10) {
       numberOfTry = 0;
@@ -231,7 +232,22 @@ void setup() {
   lcd.clear();
 
   // Get current weather condition
-  dailyTempObj.getWeatherCurrentCondition();
+  boolean gotWeatherCurrent = false;
+  while(!gotWeatherCurrent) {
+    gotWeatherCurrent = dailyTempObj.getWeatherCurrentCondition();
+
+    blinkOnboardLed();
+    
+    numberOfTry++;
+    if (numberOfTry == 10) {
+      numberOfTry = 0;
+      Serial.println("\nNO RESPOND FROM WEATHER SERVER");
+      goto cannotGetCurrentWeather;
+    }
+  }
+
+  cannotGetCurrentWeather: checkBusy();
+  
   getSlideTopRight(dailyTempObj);
   
   // Get daily weather
@@ -322,11 +338,18 @@ void loop() {
  * END MAIN BODY OF SCATCH
  */
 
+
+void blinkOnboardLed() {
+  busyFlag = !busyFlag;
+  digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+}
+
 void checkBusy() {
   if (busyFlag) {
     busyFlag = !busyFlag;
     digitalWrite(ONBOARD_LED_PIN, !busyFlag);
   }
+  numberOfTry = 0;
 }
 
 void getSlideTopRight(dailyTemperature dailyTempObj) {
