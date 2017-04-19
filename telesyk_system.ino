@@ -36,16 +36,17 @@ unsigned long timeClockUpd = 0;
 unsigned long btnLastPress = 0;
 
 #define ONBOARD_LED_PIN     2
-#define POTENTIOMETER_PIN   A0
+#define PHOTOCELL_PIN       A0
 #define RED_LED_PIN         D5
 #define GREEN_LED_PIN       D6
 #define BLUE_LED_PIN        D7
 #define BTN_SWITCH_PIN      D3
 
-#define SLIDER_INTERVAL         2000    // 2 sec
-#define CLOCK_INTERVAL          1000    // 1 sec
-#define WEATHER_CURR_INTERVAL   600000  // 10 min
 #define BTN_DEBOUNCE_TIME       200     // .2 sec
+#define BUSY_FLAG_TIME          200     // .2 sec
+#define CLOCK_INTERVAL          1000    // 1 sec
+#define SLIDER_INTERVAL         2000    // 2 sec
+#define WEATHER_CURR_INTERVAL   600000  // 10 min
 
 WiFiServer server(80);
 
@@ -61,9 +62,11 @@ byte slideLocalInfo = 0;
 byte hourNum;
 byte minuteNum;
 byte secondNum;
+byte numberOfTry = 0;
 
 boolean blink = 1;
 boolean btnFlag = 0;
+boolean busyFlag = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -82,10 +85,10 @@ void setup() {
 
   // Wifi LED   
   pinMode(ONBOARD_LED_PIN, OUTPUT);
-  digitalWrite(ONBOARD_LED_PIN, !HIGH);
+  digitalWrite(ONBOARD_LED_PIN, !LOW);
 
-  // Potentiometer
-  pinMode(POTENTIOMETER_PIN, INPUT);
+  // Photocell
+  pinMode(PHOTOCELL_PIN, INPUT);
 
   // Button
   pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
@@ -97,7 +100,7 @@ void setup() {
   lcd.print("SEARCHING WIFI  ");
 
   // Scanning WiFi network
-  byte n = WiFi.scanNetworks();
+  scanNetworks: byte n = WiFi.scanNetworks();
   Serial.println("scan done");
 
   // Connect to WiFi network
@@ -105,6 +108,10 @@ void setup() {
     Serial.println("No networks found");
     lcd.setCursor(0, 0);
     lcd.print("NO WIFI FOUND   ");
+
+    // Wait 10 seconds and scan network again
+    delay(10000);
+    goto scanNetworks;
   } else {
     for (byte i = 0; i < n; i++) {
       Serial.print(i + 1);
@@ -138,7 +145,11 @@ void setup() {
   checkingStatus: while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
+    busyFlag = !busyFlag;
+    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
   }
+  
+  checkBusy();
 
   lcd.setCursor(0, 0);
   lcd.print("WIFI CONNECTED  ");
@@ -160,7 +171,23 @@ void setup() {
   Serial.print("compiledDateTime>>>");
   Serial.println(compiledDateTime);
 
-  RtcDateTime loadingTime(currentTimeObj.getLocalTime());
+  int localTimeRespond = 0;
+  while(!localTimeRespond) {
+    localTimeRespond = currentTimeObj.getLocalTime();
+    
+    busyFlag = !busyFlag;
+    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+    numberOfTry++;
+    if (numberOfTry == 10) {
+      numberOfTry = 0;
+      Serial.println("\nNO RESPOND FROM DATE TIME SERVER");
+      goto cannotGetLocalTime;
+    }
+  }
+
+  cannotGetLocalTime: checkBusy();
+
+  RtcDateTime loadingTime(localTimeRespond);
 
   // Checking if RTC has valid time. If not - set RTC exact time
   if(!rtcObject.IsDateTimeValid()) {
@@ -202,8 +229,6 @@ void setup() {
   // Show connection info for 1 sec
   delay(1000);
   lcd.clear();
-  
-  showTime();
 
   // Get current weather condition
   dailyTempObj.getWeatherCurrentCondition();
@@ -212,6 +237,8 @@ void setup() {
   // Get daily weather
   dailyTempObj.getWeatherDailyCondition(hourNum);
   getSlideBottom(dailyTempObj);
+  
+  showTime();
 }
 
 /**
@@ -240,8 +267,6 @@ void loop() {
   if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
     timeClockUpd = clockGen;
 
-    Serial.println(analogRead(POTENTIOMETER_PIN));
-
     // Update time
     rtcExactTime = rtcObject.GetDateTime();
     hourNum = rtcExactTime.Hour();
@@ -255,6 +280,8 @@ void loop() {
         rtcTemperature = rtcObject.GetTemperature();
         showTemperature();
       }
+
+      Serial.println(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
@@ -294,6 +321,13 @@ void loop() {
 /**
  * END MAIN BODY OF SCATCH
  */
+
+void checkBusy() {
+  if (busyFlag) {
+    busyFlag = !busyFlag;
+    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+  }
+}
 
 void getSlideTopRight(dailyTemperature dailyTempObj) {
   slideTopRight1 = dailyTempObj.getCurrentTemp();

@@ -55,9 +55,11 @@ class currentTime {
     strcat(req, timeZoneApiId);
     strcat(req, "&format=json&by=zone&zone=");
     strcat(req, zone);
-    
+
     http.begin(req);
+    Serial.print("request");
     int httpCode = http.GET();
+    Serial.println(" >>> respond");
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
       String response = http.getString();
       Serial.println(response);
