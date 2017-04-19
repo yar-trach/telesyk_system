@@ -13,9 +13,9 @@ const char* ssidpass[SSID_PASS] = {
 
 #include "ssidpassword.h"
 
-#include <RtcDateTime.h>
+#include <RtcDateTime.h> // https://github.com/Makuna/Rtc
 #include <RtcUtility.h>
-#include <RtcDS3231.h> // https://github.com/Makuna/Rtc
+#include <RtcDS3231.h>
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>

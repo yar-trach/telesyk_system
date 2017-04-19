@@ -31,9 +31,9 @@
 
 #define TIME_DIFF_2000 946684800
 
-//const char* timeZoneApi = "http://api.timezonedb.com/v2";
+const char* timeZoneApi = "http://api.timezonedb.com/v2";
+const char* zone = "Europe/Kiev"; // Kyiv title for time zone API
 //const char* timeZoneApiId = "............"; // time zone API key
-//const char* zone = "..........."; // Kyiv title for time zone API
 // OR FILE WITH SAME TOKENS:
 #include "timeZoneApiToken.h";
 

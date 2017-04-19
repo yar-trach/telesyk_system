@@ -17,9 +17,9 @@
     ╚════╩══════════════════╩═════════════╝
  */
 
-//const char* openWeatherMapApiAddr = "http://api.openweathermap.org/data/2.5";
+const char* openWeatherMapApiAddr = "http://api.openweathermap.org/data/2.5";
+const char* cityid = "702550"; // Lviv id for weather API
 //const char* openWeatherMapApiId = "................................"; // weather API key
-//const char* cityid = "......"; // Lviv id for weather API
 // OR FILE WITH SAME TOKENS:
 #include "openWeatherMapApiToken.h";
 
