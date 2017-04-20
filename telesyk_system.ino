@@ -30,6 +30,7 @@ HTTPClient http;
 #include "currentTime.h"
 
 unsigned long clockGen = 0;
+unsigned long lastQuickCycle = 0;
 unsigned long lastOneSecond = 0;
 unsigned long lastTwoSeconds = 0;
 unsigned long lastTenMinutes = 0;
@@ -64,7 +65,7 @@ byte minuteNum;
 byte secondNum;
 byte numberOfTry = 0;
 
-boolean blinkPointer = 1;
+boolean blinkCursor = 1;
 boolean btnFlag = 0;
 boolean busyFlag = 0;
 
@@ -301,6 +302,13 @@ void loop() {
     btnFlag = 0;
   } // END OF Button handler
 
+  // Every .2 second cycle
+  if (clockGen - lastQuickCycle >= BUSY_FLAG_TIME) {
+    lastQuickCycle = clockGen;
+
+//    busyFlag
+  } // Every .2 second cycle
+
   // Every second cycle
   if (clockGen - lastOneSecond >= ONE_SECOND_INTERVAL) {
     lastOneSecond = clockGen;
@@ -319,6 +327,8 @@ void loop() {
         showTemperature();
       }
 
+      // Show light intens
+      e every minute
       Serial.println(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
@@ -332,8 +342,8 @@ void loop() {
 
     if (slideLocalInfo == 0) {
       lcd.setCursor(2, 0);
-      lcd.print(blinkPointer ? ":" : " ");
-      blinkPointer = !blinkPointer;
+      lcd.print(blinkCursor ? ":" : " ");
+      blinkCursor = !blinkCursor;
     }
   } // END OF Every second cycle
 
@@ -344,14 +354,14 @@ void loop() {
     updateSlider();
   } // END OF Every 2 seconds cycle
 
-  // Updating current weather (every 10 minutes)
+  // Every ten minuter cycle
   if (clockGen - lastTenMinutes >= TEN_MINUTES_INTERVAL) {
     lastTenMinutes = clockGen;
 
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
     getSlideTopRight(dailyTempObj);
-  } // END OF Updating current weather (every 10 minutes)
+  } // END OF Every ten minuter cycle
 
   // connecting to wifi client
   wifiClient();
@@ -425,7 +435,7 @@ void updateSlider() {
  */
 void showTime() {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blinkPointer ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blinkCursor ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
 }
 
 /**
