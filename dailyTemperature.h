@@ -130,6 +130,8 @@ class dailyTemperature {
   boolean getWeatherCurrentCondition() {
     Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
 
+    boolean stat = 0;
+
     char req[125];
     strcpy(req, openWeatherMapApiAddr);
     strcat(req, "/weather?id=");
@@ -155,16 +157,19 @@ class dailyTemperature {
       currentWeather = String((const char*)root["weather"][0]["main"]);
 
       changeColor();
-      return 1;
+      stat = 1;
     }
     http.end();
+    return stat;
   }
   
   /**
    * GETTING DAILY WEATHER CONDITIONS
    */
-  void getWeatherDailyCondition(byte time) {
+  boolean getWeatherDailyCondition(byte time) {
     Serial.println("\nDAILY WEATHER CONDITIONS (every 3 hours)");
+
+    boolean stat = 0;
 
     char req[125];
     strcpy(req, openWeatherMapApiAddr);
@@ -172,7 +177,7 @@ class dailyTemperature {
     strcat(req, cityid);
     strcat(req, "&mode=json&units=metric&cnt=1&appid=");
     strcat(req, openWeatherMapApiId);
-    
+
     http.begin(req);
     int httpCode = http.GET();
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
@@ -184,7 +189,7 @@ class dailyTemperature {
   
       if (!root.success()) {
         Serial.println("parseObject() failed");
-        return;
+        return 0;
       }
 
       if ((time >= 3) && (time < 12)) {
@@ -206,12 +211,14 @@ class dailyTemperature {
         tempNight = root["list"][0]["temp"]["night"];
         Serial.println("Night");
       }
-      
+
       weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
+      stat = 1;
   
       Serial.println("\ntempMorning:" + String(tempMorning) + "\ntempDay:" + String(tempDay) + "\ntempEvening:" + String(tempEvening) + "\ntempNight:" + String(tempNight) + "\nweatherDescription:" + weatherDescription);
     }
     http.end();
+    return stat;
   }
 };
 

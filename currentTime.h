@@ -49,6 +49,9 @@ class currentTime {
    */
   int getLocalTime() {
     Serial.println("\nGETTING LOCAL TIME (timestamp): ");
+
+    int returnTime = 0;
+    
     char req[100];
     strcpy(req, timeZoneApi);
     strcat(req, "/get-time-zone?key=");
@@ -57,9 +60,7 @@ class currentTime {
     strcat(req, zone);
 
     http.begin(req);
-    Serial.print("request");
     int httpCode = http.GET();
-    Serial.println(" >>> respond");
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
       String response = http.getString();
       Serial.println(response);
@@ -72,8 +73,9 @@ class currentTime {
         return 0;
       }
 
-      return root["timestamp"];
+      returnTime = root["timestamp"];
     }
     http.end();
+    return returnTime;
   }
 };

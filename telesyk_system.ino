@@ -147,7 +147,7 @@ void setup() {
     
     blinkOnboardLed();
     
-    delay(500);
+    delay(200);
   }
   
   checkBusy();
@@ -237,6 +237,8 @@ void setup() {
     gotWeatherCurrent = dailyTempObj.getWeatherCurrentCondition();
 
     blinkOnboardLed();
+
+    delay(200);
     
     numberOfTry++;
     if (numberOfTry == 10) {
@@ -251,9 +253,26 @@ void setup() {
   getSlideTopRight(dailyTempObj);
   
   // Get daily weather
-  dailyTempObj.getWeatherDailyCondition(hourNum);
-  getSlideBottom(dailyTempObj);
+  boolean gotWeatherDaily = false;
+  while(!gotWeatherDaily) {
+    gotWeatherDaily = dailyTempObj.getWeatherDailyCondition(hourNum);
+
+    blinkOnboardLed();
+
+    delay(200);
+    
+    numberOfTry++;
+    if (numberOfTry == 10) {
+      numberOfTry = 0;
+      Serial.println("\nNO RESPOND FROM WEATHER SERVER");
+      goto cannotGetDailyWeather;
+    }
+  }
+
+  cannotGetDailyWeather: checkBusy();
   
+  getSlideBottom(dailyTempObj);
+
   showTime();
 }
 
