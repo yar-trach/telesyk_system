@@ -30,10 +30,10 @@ HTTPClient http;
 #include "currentTime.h"
 
 unsigned long clockGen = 0;
-unsigned long timeWeatherCurrentReq = 0;
-unsigned long timeSliderUpd = 0;
-unsigned long timeClockUpd = 0;
-unsigned long btnLastPress = 0;
+unsigned long lastOneSecond = 0;
+unsigned long lastTwoSeconds = 0;
+unsigned long lastTenMinutes = 0;
+unsigned long lastButtonPressed = 0;
 
 #define ONBOARD_LED_PIN     2
 #define PHOTOCELL_PIN       A0
@@ -44,9 +44,9 @@ unsigned long btnLastPress = 0;
 
 #define BTN_DEBOUNCE_TIME       200     // .2 sec
 #define BUSY_FLAG_TIME          200     // .2 sec
-#define CLOCK_INTERVAL          1000    // 1 sec
-#define SLIDER_INTERVAL         2000    // 2 sec
-#define WEATHER_CURR_INTERVAL   600000  // 10 min
+#define ONE_SECOND_INTERVAL     1000    // 1 sec
+#define TWO_SECOND_INTERVAL     2000    // 2 sec
+#define TEN_MINUTES_INTERVAL    600000  // 10 min
 
 WiFiServer server(80);
 
@@ -64,7 +64,7 @@ byte minuteNum;
 byte secondNum;
 byte numberOfTry = 0;
 
-boolean blink = 1;
+boolean blinkPointer = 1;
 boolean btnFlag = 0;
 boolean busyFlag = 0;
 
@@ -224,8 +224,6 @@ void setup() {
   // Get current time
   rtcExactTime = rtcObject.GetDateTime();
   hourNum = rtcExactTime.Hour();
-  minuteNum = rtcExactTime.Minute();
-  rtcTemperature = rtcObject.GetTemperature();
 
   // Show connection info for 1 sec
   delay(1000);
@@ -272,7 +270,12 @@ void setup() {
   cannotGetDailyWeather: checkBusy();
   
   getSlideBottom(dailyTempObj);
-
+ 
+  // Get current time
+  rtcTemperature = rtcObject.GetTemperature();
+  rtcExactTime = rtcObject.GetDateTime();
+  hourNum = rtcExactTime.Hour();
+  minuteNum = rtcExactTime.Minute();
   showTime();
 }
 
@@ -284,10 +287,10 @@ void loop() {
 
   // Button handler
   boolean btn = !digitalRead(BTN_SWITCH_PIN);
-  if (btn == 1 && btnFlag == 0 && clockGen - btnLastPress > BTN_DEBOUNCE_TIME) {
+  if (btn == 1 && btnFlag == 0 && clockGen - lastButtonPressed > BTN_DEBOUNCE_TIME) {
     btnFlag = 1;
     slideLocalInfo = !slideLocalInfo;
-    btnLastPress = clockGen;
+    lastButtonPressed = clockGen;
 
     if (slideLocalInfo == 0) {
       showTime();
@@ -299,8 +302,8 @@ void loop() {
   } // END OF Button handler
 
   // Every second cycle
-  if (clockGen - timeClockUpd >= CLOCK_INTERVAL) {
-    timeClockUpd = clockGen;
+  if (clockGen - lastOneSecond >= ONE_SECOND_INTERVAL) {
+    lastOneSecond = clockGen;
 
     // Update time
     rtcExactTime = rtcObject.GetDateTime();
@@ -329,21 +332,21 @@ void loop() {
 
     if (slideLocalInfo == 0) {
       lcd.setCursor(2, 0);
-      lcd.print(blink ? ":" : " ");
-      blink = !blink;
+      lcd.print(blinkPointer ? ":" : " ");
+      blinkPointer = !blinkPointer;
     }
   } // END OF Every second cycle
 
   // Every 2 seconds cycle
-  if (clockGen - timeSliderUpd >= SLIDER_INTERVAL) {
-    timeSliderUpd = clockGen;
+  if (clockGen - lastTwoSeconds >= TWO_SECOND_INTERVAL) {
+    lastTwoSeconds = clockGen;
 
     updateSlider();
   } // END OF Every 2 seconds cycle
 
   // Updating current weather (every 10 minutes)
-  if (clockGen - timeWeatherCurrentReq >= WEATHER_CURR_INTERVAL) {
-    timeWeatherCurrentReq = clockGen;
+  if (clockGen - lastTenMinutes >= TEN_MINUTES_INTERVAL) {
+    lastTenMinutes = clockGen;
 
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
@@ -422,7 +425,7 @@ void updateSlider() {
  */
 void showTime() {
   lcd.setCursor(0, 0);
-  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blink ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
+  lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blinkPointer ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
 }
 
 /**
