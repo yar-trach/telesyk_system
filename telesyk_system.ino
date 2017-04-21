@@ -327,8 +327,7 @@ void loop() {
         showTemperature();
       }
 
-      // Show light intens
-      e every minute
+      // Show light intens every minute
       Serial.println(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
