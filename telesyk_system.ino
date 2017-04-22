@@ -28,6 +28,7 @@ const char* ssidpass[SSID_PASS] = {
 HTTPClient http;
 #include "dailyTemperature.h"
 #include "currentTime.h"
+#include "servo.h"
 
 unsigned long clockGen = 0;
 unsigned long lastQuickCycle = 0;
@@ -38,10 +39,11 @@ unsigned long lastButtonPressed = 0;
 
 #define ONBOARD_LED_PIN     2
 #define PHOTOCELL_PIN       A0
+#define BTN_SWITCH_PIN      D3
 #define RED_LED_PIN         D5
 #define GREEN_LED_PIN       D6
 #define BLUE_LED_PIN        D7
-#define BTN_SWITCH_PIN      D3
+#define SERVO_PIN           D8
 
 #define BTN_DEBOUNCE_TIME       200     // .2 sec
 #define BUSY_FLAG_TIME          200     // .2 sec
@@ -58,12 +60,12 @@ String slideTopRight1;
 String slideTopRight2;
 String slideTopRight3;
 
-byte slide = 0;
-byte slideLocalInfo = 0;
-byte hourNum;
-byte minuteNum;
-byte secondNum;
-byte numberOfTry = 0;
+uint8_t slide = 0;
+uint8_t slideLocalInfo = 0;
+uint8_t hourNum;
+uint8_t minuteNum;
+uint8_t secondNum;
+uint8_t numberOfTry = 0;
 
 boolean blinkCursor = 1;
 boolean btnFlag = 0;
@@ -71,6 +73,7 @@ boolean busyFlag = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+servo myservo = servo(SERVO_PIN);
 dailyTemperature dailyTempObj = dailyTemperature(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
 currentTime currentTimeObj = currentTime();
 
@@ -93,7 +96,7 @@ void setup() {
 
   // Button
   pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
-    
+
   // LCD
   lcd.init();                     
   lcd.backlight();
@@ -278,6 +281,12 @@ void setup() {
   hourNum = rtcExactTime.Hour();
   minuteNum = rtcExactTime.Minute();
   showTime();
+
+//  servo.write(10);
+//
+//  delay(1500);
+//
+//  servo.write(179);
 }
 
 /**
@@ -328,7 +337,8 @@ void loop() {
       }
 
       // Show light intens every minute
-      Serial.println(analogRead(PHOTOCELL_PIN));
+      
+      myservo.checkBrightness(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
