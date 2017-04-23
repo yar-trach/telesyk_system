@@ -17,7 +17,12 @@ const char* ssidpass[SSID_PASS] = {
 #include <RtcUtility.h>
 #include <RtcDS3231.h>
 
+// I2C and SPI protocols
 #include <Wire.h>
+#include <SPI.h>
+
+#include <SD.h>
+
 #include <LiquidCrystal_I2C.h>
 
 #include <ArduinoJson.h>
@@ -28,7 +33,6 @@ const char* ssidpass[SSID_PASS] = {
 HTTPClient http;
 #include "dailyTemperature.h"
 #include "currentTime.h"
-#include "servo.h"
 
 unsigned long clockGen = 0;
 unsigned long lastQuickCycle = 0;
@@ -37,13 +41,13 @@ unsigned long lastTwoSeconds = 0;
 unsigned long lastTenMinutes = 0;
 unsigned long lastButtonPressed = 0;
 
-#define ONBOARD_LED_PIN     2
-#define PHOTOCELL_PIN       A0
-#define BTN_SWITCH_PIN      D3
-#define RED_LED_PIN         D5
-#define GREEN_LED_PIN       D6
-#define BLUE_LED_PIN        D7
-#define SERVO_PIN           D8
+#define PHOTOCELL_PIN       A0 // ADC0
+#define BTN_SWITCH_PIN      D3 // GPIO0
+#define ONBOARD_LED_PIN     D4 // GPIO2 (inversed)
+#define MICRO_SD_PIN        D8 // GPIO15
+#define RED_LED_PIN         10 // SD3 (GPIO10) - can't recognise SD3 like pin number
+#define GREEN_LED_PIN       D4 // GPIO2
+#define BLUE_LED_PIN        D0 // GPIO16
 
 #define BTN_DEBOUNCE_TIME       200     // .2 sec
 #define BUSY_FLAG_TIME          200     // .2 sec
@@ -73,13 +77,14 @@ boolean busyFlag = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-servo myservo = servo(SERVO_PIN);
 dailyTemperature dailyTempObj = dailyTemperature(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
 RtcDateTime rtcExactTime;
 RtcTemperature rtcTemperature = rtcObject.GetTemperature();
+
+File myFile;
 
 void setup() {
   Serial.begin(115200);
@@ -101,9 +106,47 @@ void setup() {
   lcd.init();                     
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("SEARCHING WIFI  ");
+
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(D8)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+  myFile = SD.open("test.txt", FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.print("Writing to test.txt...");
+    myFile.println("testing 1, 2, 3.");
+    // close the file:
+    myFile.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+
+  // re-open the file for reading:
+  myFile = SD.open("test.txt");
+  if (myFile) {
+    Serial.println("test.txt:");
+
+    // read from the file until there's nothing else in it:
+    while (myFile.available()) {
+      Serial.write(myFile.read());
+    }
+    // close the file:
+    myFile.close();
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+  
 
   // Scanning WiFi network
+  lcd.print("SEARCHING WIFI  ");
   scanNetworks: byte n = WiFi.scanNetworks();
   Serial.println("scan done");
 
@@ -281,12 +324,6 @@ void setup() {
   hourNum = rtcExactTime.Hour();
   minuteNum = rtcExactTime.Minute();
   showTime();
-
-//  servo.write(10);
-//
-//  delay(1500);
-//
-//  servo.write(179);
 }
 
 /**
@@ -337,8 +374,8 @@ void loop() {
       }
 
       // Show light intens every minute
-      
-      myservo.checkBrightness(analogRead(PHOTOCELL_PIN));
+      Serial.print("Brightness>>>");
+      Serial.println(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms

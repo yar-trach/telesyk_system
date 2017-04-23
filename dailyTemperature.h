@@ -29,11 +29,11 @@ const char* cityid = "702550"; // Lviv id for weather API
 
 class dailyTemperature {
   private:
-  byte tempCurrent = 0;
-  byte tempMorning = 0;
-  byte tempDay = 0;
-  byte tempEvening = 0;
-  byte tempNight = 0;
+  int8_t tempCurrent = 0;
+  int8_t tempMorning = 0;
+  int8_t tempDay = 0;
+  int8_t tempEvening = 0;
+  int8_t tempNight = 0;
 
   String currentWeather;
   String weatherDescription;
