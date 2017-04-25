@@ -23,9 +23,9 @@ const char* cityid = "702550"; // Lviv id for weather API
 // OR FILE WITH SAME TOKENS:
 #include "openWeatherMapApiToken.h";
 
-//#ifndef http
-//HTTPClient http;
-//#endif
+#ifndef __SD_H__
+#define __SD_H__
+#endif
 
 class dailyTemperature {
   private:
@@ -34,6 +34,9 @@ class dailyTemperature {
   int8_t tempDay = 0;
   int8_t tempEvening = 0;
   int8_t tempNight = 0;
+
+  File weatherFile;
+  //weatherFile = SD.open("test.txt", FILE_WRITE);
 
   String currentWeather;
   String weatherDescription;
@@ -88,7 +91,7 @@ class dailyTemperature {
   }
 
   public:
-  dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN) {
+  dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN, File weatherFile) {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
     pinMode(BLUE_LED_PIN, OUTPUT);
@@ -96,6 +99,8 @@ class dailyTemperature {
     _RED_LED_PIN = RED_LED_PIN;
     _GREEN_LED_PIN = GREEN_LED_PIN;
     _BLUE_LED_PIN = BLUE_LED_PIN;
+
+    weatherFile = weatherFile;
   }
 
   String getCurrentTemp() {
@@ -129,7 +134,7 @@ class dailyTemperature {
    */
   boolean getWeatherCurrentCondition() {
     Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
-
+    Serial.println(millis());
     boolean stat = 0;
 
     char req[125];
@@ -138,11 +143,20 @@ class dailyTemperature {
     strcat(req, cityid);
     strcat(req, "&mode=json&units=metric&appid=");
     strcat(req, openWeatherMapApiId);
-    
+
+    Serial.println(millis());
     http.begin(req);
-    int httpCode = http.GET();
+    Serial.println(millis());
+    int httpCode = 0;
+    while(!httpCode) {
+      Serial.println(millis());
+      httpCode = http.GET();
+    }
+    Serial.println(millis());
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
+      Serial.println(millis());
       String response = http.getString();
+      Serial.println(millis());
       Serial.println(response);
       
       StaticJsonBuffer<2000> jsonBuffer;
@@ -160,6 +174,7 @@ class dailyTemperature {
       stat = 1;
     }
     http.end();
+    Serial.println(millis());
     return stat;
   }
   
@@ -214,6 +229,48 @@ class dailyTemperature {
 
       weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
       stat = 1;
+
+
+
+      StaticJsonBuffer<200> outputJsonBuffer;
+      JsonObject& rootOutput = outputJsonBuffer.createObject();
+      rootOutput["hour"] = time;
+      rootOutput["mo"] = tempMorning;
+      rootOutput["da"] = tempDay;
+      rootOutput["ev"] = tempEvening;
+      rootOutput["ni"] = tempNight;
+
+      char buffer[200];
+      rootOutput.printTo(buffer, sizeof(buffer));
+      
+      // If success, add weather line to fine
+      weatherFile = SD.open("weather.txt", FILE_WRITE);
+      if (weatherFile) {
+        Serial.print("Writing to weather.txt...");
+        weatherFile.println(buffer);
+        // close the file:
+        weatherFile.close();
+        Serial.println("done.");
+      } else {
+        // if the file didn't open, print an error:
+        Serial.println("error opening test.txt");
+      } // END OF If success, add weather line to fine
+    
+      // re-open the file for reading:
+      weatherFile = SD.open("weather.txt");
+      if (weatherFile) {
+        Serial.println("weather.txt:");
+    
+        // read from the file until there's nothing else in it:
+        while (weatherFile.available()) {
+          Serial.write(weatherFile.read());
+        }
+        // close the file:
+        weatherFile.close();
+      } else {
+        // if the file didn't open, print an error:
+        Serial.println("error opening weather.txt");
+      }
   
       Serial.println("\ntempMorning:" + String(tempMorning) + "\ntempDay:" + String(tempDay) + "\ntempEvening:" + String(tempEvening) + "\ntempNight:" + String(tempNight) + "\nweatherDescription:" + weatherDescription);
     }
