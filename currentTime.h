@@ -40,9 +40,7 @@ const char* zone = "Europe/Kiev"; // Kyiv title for time zone API
 class currentTime {
 
   public:
-  currentTime() {
-    
-  }
+  currentTime() {}
 
   /**
    * GET LOCAL TIME

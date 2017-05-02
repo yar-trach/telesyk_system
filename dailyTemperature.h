@@ -36,7 +36,6 @@ class dailyTemperature {
   int8_t tempNight = 0;
 
   File weatherFile;
-  //weatherFile = SD.open("test.txt", FILE_WRITE);
 
   String currentWeather;
   String weatherDescription;
@@ -134,7 +133,7 @@ class dailyTemperature {
    */
   boolean getWeatherCurrentCondition() {
     Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
-    Serial.println(millis());
+    //led busy on
     boolean stat = 0;
 
     char req[125];
@@ -144,19 +143,14 @@ class dailyTemperature {
     strcat(req, "&mode=json&units=metric&appid=");
     strcat(req, openWeatherMapApiId);
 
-    Serial.println(millis());
     http.begin(req);
-    Serial.println(millis());
     int httpCode = 0;
     while(!httpCode) {
-      Serial.println(millis());
       httpCode = http.GET();
     }
     Serial.println(millis());
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
-      Serial.println(millis());
       String response = http.getString();
-      Serial.println(millis());
       Serial.println(response);
       
       StaticJsonBuffer<2000> jsonBuffer;
@@ -174,7 +168,7 @@ class dailyTemperature {
       stat = 1;
     }
     http.end();
-    Serial.println(millis());
+    //led busy off
     return stat;
   }
   
@@ -207,30 +201,28 @@ class dailyTemperature {
         return 0;
       }
 
-      if ((time >= 3) && (time < 12)) {
+//      if ((time >= 3) && (time < 12)) {
         tempMorning = root["list"][0]["temp"]["morn"];
         tempDay = root["list"][0]["temp"]["day"];
         tempEvening = root["list"][0]["temp"]["eve"];
         tempNight = root["list"][0]["temp"]["night"];
-        Serial.println("Morning");
-      } else if ((time >= 3) && (time < 19)) {
-        tempDay = root["list"][0]["temp"]["day"];
-        tempEvening = root["list"][0]["temp"]["eve"];
-        tempNight = root["list"][0]["temp"]["night"];
-        Serial.println("Day");
-      } else if ((time >= 3) && (time < 23)) {
-        tempEvening = root["list"][0]["temp"]["eve"];
-        tempNight = root["list"][0]["temp"]["night"];
-        Serial.println("Evening");
-      } else {
-        tempNight = root["list"][0]["temp"]["night"];
-        Serial.println("Night");
-      }
+//        Serial.println("Morning");
+//      } else if ((time >= 3) && (time < 19)) {
+//        tempDay = root["list"][0]["temp"]["day"];
+//        tempEvening = root["list"][0]["temp"]["eve"];
+//        tempNight = root["list"][0]["temp"]["night"];
+//        Serial.println("Day");
+//      } else if ((time >= 3) && (time < 23)) {
+//        tempEvening = root["list"][0]["temp"]["eve"];
+//        tempNight = root["list"][0]["temp"]["night"];
+//        Serial.println("Evening");
+//      } else {
+//        tempNight = root["list"][0]["temp"]["night"];
+//        Serial.println("Night");
+//      }
 
       weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
       stat = 1;
-
-
 
       StaticJsonBuffer<200> outputJsonBuffer;
       JsonObject& rootOutput = outputJsonBuffer.createObject();

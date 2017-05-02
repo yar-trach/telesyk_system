@@ -114,37 +114,6 @@ void setup() {
   }
   Serial.println("initialization done.");
 
-//  myFile = SD.open("test.txt", FILE_WRITE);
-//
-//  // if the file opened okay, write to it:
-//  if (myFile) {
-//    Serial.print("Writing to test.txt...");
-//    myFile.println("testing 1, 2, 3.");
-//    // close the file:
-//    myFile.close();
-//    Serial.println("done.");
-//  } else {
-//    // if the file didn't open, print an error:
-//    Serial.println("error opening test.txt");
-//  }
-//
-//  // re-open the file for reading:
-//  myFile = SD.open("test.txt");
-//  if (myFile) {
-//    Serial.println("test.txt:");
-//
-//    // read from the file until there's nothing else in it:
-//    while (myFile.available()) {
-//      Serial.write(myFile.read());
-//    }
-//    // close the file:
-//    myFile.close();
-//  } else {
-//    // if the file didn't open, print an error:
-//    Serial.println("error opening test.txt");
-//  }
-  
-
   // Scanning WiFi network
   lcd.print("SEARCHING WIFI  ");
   scanNetworks: byte n = WiFi.scanNetworks();
@@ -379,10 +348,10 @@ void loop() {
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
-        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
+//        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
           dailyTempObj.getWeatherDailyCondition(hourNum);
           getSlideBottom(dailyTempObj);
-        }
+//        }
       }
     }
 
@@ -408,9 +377,6 @@ void loop() {
     dailyTempObj.getWeatherCurrentCondition();
     getSlideTopRight(dailyTempObj);
   } // END OF Every ten minuter cycle
-
-  // connecting to wifi client
-  wifiClient();
 }
 /**
  * END MAIN BODY OF SCATCH
@@ -492,54 +458,3 @@ void showTemperature() {
   lcd.print(String(rtcTemperature.AsWholeDegrees() > 0 ? "+" : "-") + String(rtcTemperature.AsWholeDegrees() < 10 ? "0" : "") + rtcTemperature.AsWholeDegrees() + "C" + String((char)223));
 }
 
-/**
- * HANDLING WIFI CLIENT
- * 
- * doesn't work properly
- */
-void wifiClient() {
-  // Check if a client has connected
-  WiFiClient client = server.available();
-  if (!client) {
-    return;
-  }
- 
-  // Wait until the client sends some data
-  Serial.println("new client");
-  while(!client.available()){
-    delay(1);
-  }
- 
-  // Read the first line of the request
-  String request = client.readStringUntil('\r');
-  Serial.println(request);
-  client.flush();
- 
-  // Match the request
-  int value = LOW;
-  if (request.indexOf("/LED=ON") != -1)  {
-    digitalWrite(ONBOARD_LED_PIN, LOW);
-    value = HIGH;
-  }
-  if (request.indexOf("/LED=OFF") != -1)  {
-    digitalWrite(ONBOARD_LED_PIN, HIGH);
-    value = LOW;
-  }
-  
-  // Return the response
-  String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n";
-  String body = "GPIO is now ";
-         body += (value == HIGH) ? "ON" : "OFF";
-         body += "<a href=\"/LED=ON\"\"><button>Turn On </button></a>";
-         body += "<a href=\"/LED=OFF\"\"><button>Turn Off </button></a><br />";
-  String footer = "</html>\n";
-
-  String response = header + body + footer;
-  client.println(response);
-
- 
-  delay(1);
-  Serial.println("Client disonnected");
-  Serial.println("");
-}
- 
