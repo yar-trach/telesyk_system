@@ -89,6 +89,48 @@ class dailyTemperature {
     analogWrite(_BLUE_LED_PIN, blue);
   }
 
+  void pushDataToFile(byte time) {
+    StaticJsonBuffer<200> outputJsonBuffer;
+    JsonObject& rootOutput = outputJsonBuffer.createObject();
+    rootOutput["hour"] = time;
+    rootOutput["mo"] = tempMorning;
+    rootOutput["da"] = tempDay;
+    rootOutput["ev"] = tempEvening;
+    rootOutput["ni"] = tempNight;
+    
+    char buffer[200];
+    rootOutput.printTo(buffer, sizeof(buffer));
+    
+    // If success, add weather line to fine
+    weatherFile = SD.open("weather.txt", FILE_WRITE);
+    if (weatherFile) {
+      Serial.print("Writing to weather.txt...");
+      weatherFile.println(buffer);
+      // close the file:
+      weatherFile.close();
+      Serial.println("done.");
+    } else {
+      // if the file didn't open, print an error:
+      Serial.println("error opening test.txt");
+    } // END OF If success, add weather line to fine
+    
+    // re-open the file for reading:
+    weatherFile = SD.open("weather.txt");
+    if (weatherFile) {
+      Serial.println("weather.txt:");
+    
+      // read from the file until there's nothing else in it:
+      while (weatherFile.available()) {
+        Serial.write(weatherFile.read());
+      }
+      // close the file:
+      weatherFile.close();
+    } else {
+      // if the file didn't open, print an error:
+      Serial.println("error opening weather.txt");
+    }
+  }
+
   public:
   dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN, File weatherFile) {
     pinMode(RED_LED_PIN, OUTPUT);
@@ -144,11 +186,7 @@ class dailyTemperature {
     strcat(req, openWeatherMapApiId);
 
     http.begin(req);
-    int httpCode = 0;
-    while(!httpCode) {
-      httpCode = http.GET();
-    }
-    Serial.println(millis());
+    int httpCode = http.GET();
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
       String response = http.getString();
       Serial.println(response);
@@ -224,45 +262,8 @@ class dailyTemperature {
       weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
       stat = 1;
 
-      StaticJsonBuffer<200> outputJsonBuffer;
-      JsonObject& rootOutput = outputJsonBuffer.createObject();
-      rootOutput["hour"] = time;
-      rootOutput["mo"] = tempMorning;
-      rootOutput["da"] = tempDay;
-      rootOutput["ev"] = tempEvening;
-      rootOutput["ni"] = tempNight;
-
-      char buffer[200];
-      rootOutput.printTo(buffer, sizeof(buffer));
       
-      // If success, add weather line to fine
-      weatherFile = SD.open("weather.txt", FILE_WRITE);
-      if (weatherFile) {
-        Serial.print("Writing to weather.txt...");
-        weatherFile.println(buffer);
-        // close the file:
-        weatherFile.close();
-        Serial.println("done.");
-      } else {
-        // if the file didn't open, print an error:
-        Serial.println("error opening test.txt");
-      } // END OF If success, add weather line to fine
-    
-      // re-open the file for reading:
-      weatherFile = SD.open("weather.txt");
-      if (weatherFile) {
-        Serial.println("weather.txt:");
-    
-        // read from the file until there's nothing else in it:
-        while (weatherFile.available()) {
-          Serial.write(weatherFile.read());
-        }
-        // close the file:
-        weatherFile.close();
-      } else {
-        // if the file didn't open, print an error:
-        Serial.println("error opening weather.txt");
-      }
+      pushDataToFile(time);
   
       Serial.println("\ntempMorning:" + String(tempMorning) + "\ntempDay:" + String(tempDay) + "\ntempEvening:" + String(tempEvening) + "\ntempNight:" + String(tempNight) + "\nweatherDescription:" + weatherDescription);
     }
