@@ -1,31 +1,9 @@
-/**
- *  Color scheme
-    ╔════╦══════════════════╦═════════════╗
-    ║    ║    RGB Color     ║ Temperature ║
-    ╠════╬══════════════════╬═════════════╣
-    ║  1 ║ rgb(255, 0, 255) ║ -273 to -29 ║
-    ║  2 ║ rgb(128, 0, 255) ║ -28 to -21  ║
-    ║  3 ║ rgb(0, 0, 255)   ║ -20 to 0    ║
-    ║  4 ║ rgb(0, 128, 255) ║ 0 to 7      ║
-    ║  5 ║ rgb(0, 255, 255) ║ 8 to 15     ║
-    ║  6 ║ rgb(0, 255, 128) ║ 16 to 20    ║
-    ║  7 ║ rgb(0, 255, 0)   ║ 21 to 25    ║
-    ║  8 ║ rgb(255, 255, 0) ║ 26 to 32    ║
-    ║  9 ║ rgb(255, 128, 0) ║ 33 to 37    ║
-    ║ 10 ║ rgb(255, 64, 0)  ║ 38 to 54    ║
-    ║ 11 ║ rgb(255, 0, 0)   ║ > 54        ║
-    ╚════╩══════════════════╩═════════════╝
- */
-
 const char* openWeatherMapApiAddr = "http://api.openweathermap.org/data/2.5";
 const char* cityid = "702550"; // Lviv id for weather API
 //const char* openWeatherMapApiId = "................................"; // weather API key
 // OR FILE WITH SAME TOKENS:
 #include "openWeatherMapApiToken.h";
-
-#ifndef __SD_H__
-#define __SD_H__
-#endif
+#include "ledrgb.h";
 
 class dailyTemperature {
   private:
@@ -35,60 +13,13 @@ class dailyTemperature {
   int8_t tempEvening = 0;
   int8_t tempNight = 0;
 
-  File weatherFile;
-
   String currentWeather;
   String weatherDescription;
   byte currentHumidity;
   
-  char _RED_LED_PIN;
-  char _GREEN_LED_PIN;
-  char _BLUE_LED_PIN;
-
-  /**
-   * SETTING COLOR OF LED INDICATOR
-   */
-  void changeColor() {
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
-
-    byte tempt = tempCurrent;
-    
-    if (tempt < -29) {
-      tempt = -29;
-    } else if (tempt > 54) {
-      tempt = 54;
-    }
-    
-    if (tempt <= 0) {
-      red = map(tempt, 0, -29, 0, 255);
-      green = 0;
-      blue = 255;
-    } else if (tempt > 0 && tempt <= 25) {
-      red = 0;
-      green = 255;
-      blue = map(tempt, 1, 25, 255, 1);
-    } else {
-      red = 255;
-      green = map(tempt, 26, 54, 255, 0);
-      blue = 0;
-    }
-
-    Serial.print("red>>");
-    Serial.print(red);
-
-    Serial.print("  green>>");
-    Serial.print(green);
-
-    Serial.print("  blue>>");
-    Serial.println(blue);
-    
-    analogWrite(_RED_LED_PIN, red);
-    analogWrite(_GREEN_LED_PIN, green);
-    analogWrite(_BLUE_LED_PIN, blue);
-  }
-
+  LEDRGB indicator;
+  File weatherFile;
+  
   void pushDataToFile(byte time) {
     StaticJsonBuffer<200> outputJsonBuffer;
     JsonObject& rootOutput = outputJsonBuffer.createObject();
@@ -132,16 +63,12 @@ class dailyTemperature {
   }
 
   public:
-  dailyTemperature(char RED_LED_PIN, char GREEN_LED_PIN, char BLUE_LED_PIN, File weatherFile) {
-    pinMode(RED_LED_PIN, OUTPUT);
-    pinMode(GREEN_LED_PIN, OUTPUT);
-    pinMode(BLUE_LED_PIN, OUTPUT);
-
-    _RED_LED_PIN = RED_LED_PIN;
-    _GREEN_LED_PIN = GREEN_LED_PIN;
-    _BLUE_LED_PIN = BLUE_LED_PIN;
-
-    weatherFile = weatherFile;
+  dailyTemperature(LEDRGB indicator, File weatherFile)
+  :
+    indicator(indicator),
+    weatherFile(weatherFile)
+  {
+    indicator.changeColor(0);
   }
 
   String getCurrentTemp() {
@@ -202,7 +129,7 @@ class dailyTemperature {
       currentHumidity = root["main"]["humidity"];
       currentWeather = String((const char*)root["weather"][0]["main"]);
 
-      changeColor();
+      indicator.changeColor(tempCurrent);
       stat = 1;
     }
     http.end();

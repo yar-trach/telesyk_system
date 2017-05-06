@@ -33,6 +33,7 @@ const char* ssidpass[SSID_PASS] = {
 HTTPClient http;
 #include "dailyTemperature.h"
 #include "currentTime.h"
+#include "ledrgb.h";
 
 unsigned long clockGen = 0;
 unsigned long lastQuickCycle = 0;
@@ -43,7 +44,7 @@ unsigned long lastButtonPressed = 0;
 
 #define PHOTOCELL_PIN       A0 // ADC0
 #define BTN_SWITCH_PIN      D3 // GPIO0
-#define ONBOARD_LED_PIN     D4 // GPIO2 (inversed)
+//#define ONBOARD_LED_PIN     D4 // GPIO2 (inversed)
 #define MICRO_SD_PIN        D8 // GPIO15
 #define RED_LED_PIN         10 // SD3 (GPIO10) - can't recognise SD3 like pin number
 #define GREEN_LED_PIN       D4 // GPIO2
@@ -54,8 +55,6 @@ unsigned long lastButtonPressed = 0;
 #define ONE_SECOND_INTERVAL     1000    // 1 sec
 #define TWO_SECOND_INTERVAL     2000    // 2 sec
 #define TEN_MINUTES_INTERVAL    600000  // 10 min
-
-WiFiServer server(80);
 
 String slideBottom1;
 String slideBottom2;
@@ -78,8 +77,8 @@ boolean busyFlag = 0;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 File weatherFile;
-
-dailyTemperature dailyTempObj = dailyTemperature(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN, weatherFile);
+LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
+dailyTemperature dailyTempObj(indicator, weatherFile);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -93,8 +92,8 @@ void setup() {
   Serial.println("\nBooting");
 
   // Wifi LED   
-  pinMode(ONBOARD_LED_PIN, OUTPUT);
-  digitalWrite(ONBOARD_LED_PIN, !LOW);
+//  pinMode(ONBOARD_LED_PIN, OUTPUT);
+//  digitalWrite(ONBOARD_LED_PIN, !LOW);
 
   // Photocell
   pinMode(PHOTOCELL_PIN, INPUT);
@@ -174,12 +173,6 @@ void setup() {
 
   // Start i2c
   Wire.begin();
-  
-  // Start the server
-  server.begin();
-  
-  Serial.print("Server started at: ");
-  Serial.println(WiFi.localIP());
 
   // Compiling RTC. Or not
   rtcObject.Begin();
@@ -250,7 +243,7 @@ void setup() {
   while(!gotWeatherCurrent) {
     gotWeatherCurrent = dailyTempObj.getWeatherCurrentCondition();
 
-    blinkOnboardLed();
+//    blinkOnboardLed();
 
     delay(200);
     
@@ -271,7 +264,7 @@ void setup() {
   while(!gotWeatherDaily) {
     gotWeatherDaily = dailyTempObj.getWeatherDailyCondition(hourNum);
 
-    blinkOnboardLed();
+//    blinkOnboardLed();
 
     delay(200);
     
@@ -327,6 +320,8 @@ void loop() {
   // Every second cycle
   if (clockGen - lastOneSecond >= ONE_SECOND_INTERVAL) {
     lastOneSecond = clockGen;
+
+    
 
     // Update time
     rtcExactTime = rtcObject.GetDateTime();
@@ -385,13 +380,13 @@ void loop() {
 
 void blinkOnboardLed() {
   busyFlag = !busyFlag;
-  digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+//  digitalWrite(ONBOARD_LED_PIN, !busyFlag);
 }
 
 void checkBusy() {
   if (busyFlag) {
     busyFlag = !busyFlag;
-    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
+//    digitalWrite(ONBOARD_LED_PIN, !busyFlag);
   }
   numberOfTry = 0;
 }
