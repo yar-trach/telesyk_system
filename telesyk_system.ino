@@ -30,7 +30,7 @@ const char* ssidpass[SSID_PASS] = {
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-HTTPClient http;
+
 #include "dailyTemperature.h"
 #include "currentTime.h"
 #include "ledrgb.h";
@@ -75,10 +75,9 @@ boolean btnFlag = 0;
 boolean busyFlag = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
-dailyTemperature dailyTempObj(indicator, weatherFile);
+DAILYTEMPERATURE dailyTempObj(indicator, weatherFile);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -160,7 +159,7 @@ void setup() {
   checkingStatus: while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     
-    blinkOnboardLed();
+//    blinkOnboardLed();
     
     delay(200);
   }
@@ -185,7 +184,7 @@ void setup() {
   while(!localTimeRespond) {
     localTimeRespond = currentTimeObj.getLocalTime();
     
-    blinkOnboardLed();
+//    blinkOnboardLed();
     
     numberOfTry++;
     if (numberOfTry == 10) {
@@ -257,7 +256,7 @@ void setup() {
 
   cannotGetCurrentWeather: checkBusy();
   
-  getSlideTopRight(dailyTempObj);
+//  getSlideTopRight(dailyTempObj);
   
   // Get daily weather
   boolean gotWeatherDaily = false;
@@ -278,7 +277,7 @@ void setup() {
 
   cannotGetDailyWeather: checkBusy();
   
-  getSlideBottom(dailyTempObj);
+//  getSlideBottom(dailyTempObj);
  
   // Get current time
   rtcTemperature = rtcObject.GetTemperature();
@@ -310,18 +309,16 @@ void loop() {
     btnFlag = 0;
   } // END OF Button handler
 
-  // Every .2 second cycle
-  if (clockGen - lastQuickCycle >= BUSY_FLAG_TIME) {
-    lastQuickCycle = clockGen;
-
-//    busyFlag
-  } // Every .2 second cycle
+//  // Every .2 second cycle
+//  if (clockGen - lastQuickCycle >= BUSY_FLAG_TIME) {
+//    lastQuickCycle = clockGen;
+//
+////    busyFlag
+//  } // Every .2 second cycle
 
   // Every second cycle
   if (clockGen - lastOneSecond >= ONE_SECOND_INTERVAL) {
     lastOneSecond = clockGen;
-
-    
 
     // Update time
     rtcExactTime = rtcObject.GetDateTime();
@@ -345,7 +342,7 @@ void loop() {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
 //        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
           dailyTempObj.getWeatherDailyCondition(hourNum);
-          getSlideBottom(dailyTempObj);
+//          getSlideBottom(dailyTempObj);
 //        }
       }
     }
@@ -370,7 +367,7 @@ void loop() {
 
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
-    getSlideTopRight(dailyTempObj);
+//    getSlideTopRight(dailyTempObj);
   } // END OF Every ten minuter cycle
 }
 /**
@@ -391,17 +388,17 @@ void checkBusy() {
   numberOfTry = 0;
 }
 
-void getSlideTopRight(dailyTemperature dailyTempObj) {
-  slideTopRight1 = dailyTempObj.getCurrentTemp();
-  slideTopRight2 = dailyTempObj.getCurrentHumidity();
-  slideTopRight3 = dailyTempObj.getCurrentWeather();
-}
-
-void getSlideBottom(dailyTemperature dailyTempObj) {
-  slideBottom1 = dailyTempObj.getMorDayTemp();
-  slideBottom2 = dailyTempObj.getEveNigTemp();
-  slideBottom3 = dailyTempObj.getWeatherDescription();
-}
+//void getSlideTopRight(DAILYTEMPERATURE dailyTempObj) {
+//  slideTopRight1 = dailyTempObj.getCurrentTemp();
+//  slideTopRight2 = dailyTempObj.getCurrentHumidity();
+//  slideTopRight3 = dailyTempObj.getCurrentWeather();
+//}
+//
+//void getSlideBottom(DAILYTEMPERATURE dailyTempObj) {
+//  slideBottom1 = dailyTempObj.getMorDayTemp();
+//  slideBottom2 = dailyTempObj.getEveNigTemp();
+//  slideBottom3 = dailyTempObj.getWeatherDescription();
+//}
 
 /**
  * UPDATING LCD

@@ -37,6 +37,8 @@ const char* zone = "Europe/Kiev"; // Kyiv title for time zone API
 // OR FILE WITH SAME TOKENS:
 #include "timeZoneApiToken.h";
 
+HTTPClient http2;
+
 class currentTime {
 
   public:
@@ -57,10 +59,10 @@ class currentTime {
     strcat(req, "&format=json&by=zone&zone=");
     strcat(req, zone);
 
-    http.begin(req);
-    int httpCode = http.GET();
+    http2.begin(req);
+    int httpCode = http2.GET();
     if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
-      String response = http.getString();
+      String response = http2.getString();
       Serial.println(response);
   
       StaticJsonBuffer<2000> jsonBuffer;
@@ -73,7 +75,7 @@ class currentTime {
 
       returnTime = root["timestamp"];
     }
-    http.end();
+    http2.end();
     return returnTime;
   }
 };
