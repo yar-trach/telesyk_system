@@ -22,25 +22,27 @@ DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile)
 void DAILYTEMPERATURE::showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd) {
   switch (slide) {
     case 0:
-      _lcd.setCursor(0, 1);
-      _lcd.print("sb1");//slideBottom1
-
       _lcd.setCursor(9, 0);
-      _lcd.print("str1");//slideTopRight1 + "  "
+      _lcd.print(String(tempCurrent > 0 ? "+" : "-") + String(tempCurrent < 10 ? "0" : "") + String(tempCurrent) + "C" + String((char)223) + "  ");
+      
+      _lcd.setCursor(0, 1);
+      _lcd.print("MOR" + String(tempMorning > 0 ? "+" : "-") + String(tempMorning < 10 ? "0" : "") + String(tempMorning) + "C" + String((char)223)   
+              + " DAY" + String(tempDay > 0 ? "+" : "-") + String(tempDay < 10 ? "0" : "") + String(tempDay) + "C" + String((char)223));
     break;
     case 1:
-      _lcd.setCursor(0, 1);
-      _lcd.print("sb2");//slideBottom2
-
       _lcd.setCursor(9, 0);
-      _lcd.print("str2");//slideTopRight2 + "  "
+      _lcd.print("Hum" + String(currentHumidity) + "%" + " ");
+      
+      _lcd.setCursor(0, 1);
+      _lcd.print("EVE" + String(tempEvening > 0 ? "+" : "-") + String(tempEvening < 10 ? "0" : "") + String(tempEvening) + "C" + String((char)223)   
+              + " NIG" + String(tempNight > 0 ? "+" : "-") + String(tempNight < 10 ? "0" : "") + String(tempNight) + "C" + String((char)223));
     break;
     case 2:
-      _lcd.setCursor(0, 1);
-      _lcd.print("sb3");//slideBottom3 + "         "
- 
       _lcd.setCursor(9, 0);
-      _lcd.print("str3");//slideTopRight3 + "  "
+      _lcd.print(currentWeather);
+      
+      _lcd.setCursor(0, 1);
+      _lcd.print(weatherDescription + "         ");
     break;
   }
 }

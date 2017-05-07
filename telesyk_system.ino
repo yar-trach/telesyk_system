@@ -93,8 +93,7 @@ void setup() {
   pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
 
   // LCD
-  // LCD init() function initializing Wire() instead of us
-  lcd.init();                     
+  lcd.init(); // LCD init() function initializing Wire() instead of us
   lcd.backlight();
   lcd.setCursor(0, 0);
 
@@ -246,8 +245,6 @@ void setup() {
 
   cannotGetCurrentWeather: checkBusy();
   
-//  getSlideTopRight(dailyTempObj);
-  
   // Get daily weather
   boolean gotWeatherDaily = false;
   while(!gotWeatherDaily) {
@@ -267,8 +264,6 @@ void setup() {
 
   cannotGetDailyWeather: checkBusy();
   
-//  getSlideBottom(dailyTempObj);
- 
   // Get current time
   rtcTemperature = rtcObject.GetTemperature();
   rtcExactTime = rtcObject.GetDateTime();
@@ -332,7 +327,6 @@ void loop() {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
 //        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
           dailyTempObj.getWeatherDailyCondition(hourNum);
-//          getSlideBottom(dailyTempObj);
 //        }
       }
     }
@@ -348,7 +342,6 @@ void loop() {
   if (clockGen - lastTwoSeconds >= TWO_SECOND_INTERVAL) {
     lastTwoSeconds = clockGen;
 
-//    updateSlider();
     dailyTempObj.showWeatherInfo(slide, lcd);
     if (slide++ == 3) {
       slide = 0;
@@ -361,7 +354,6 @@ void loop() {
 
     // update current weather condition
     dailyTempObj.getWeatherCurrentCondition();
-//    getSlideTopRight(dailyTempObj);
   } // END OF Every ten minuter cycle
 }
 /**
