@@ -30,7 +30,6 @@ const char* ssidpass[SSID_PASS] = {
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-
 #include "dailyTemperature.h"
 #include "currentTime.h"
 #include "ledrgb.h";
@@ -56,13 +55,6 @@ unsigned long lastButtonPressed = 0;
 #define TWO_SECOND_INTERVAL     2000    // 2 sec
 #define TEN_MINUTES_INTERVAL    600000  // 10 min
 
-String slideBottom1;
-String slideBottom2;
-String slideBottom3;
-String slideTopRight1;
-String slideTopRight2;
-String slideTopRight3;
-
 uint8_t slide = 0;
 uint8_t slideLocalInfo = 0;
 uint8_t hourNum;
@@ -77,7 +69,7 @@ boolean busyFlag = 0;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
-DAILYTEMPERATURE dailyTempObj(indicator, weatherFile, lcd);
+DAILYTEMPERATURE dailyTempObj(indicator, weatherFile);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -101,6 +93,7 @@ void setup() {
   pinMode(BTN_SWITCH_PIN, INPUT_PULLUP);
 
   // LCD
+  // LCD init() function initializing Wire() instead of us
   lcd.init();                     
   lcd.backlight();
   lcd.setCursor(0, 0);
@@ -169,9 +162,6 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print("WIFI CONNECTED  ");
   Serial.println("\nWiFi connected");
-
-  // Start i2c
-  Wire.begin();
 
   // Compiling RTC. Or not
   rtcObject.Begin();
@@ -300,11 +290,11 @@ void loop() {
     slideLocalInfo = !slideLocalInfo;
     lastButtonPressed = clockGen;
 
-//    if (slideLocalInfo == 0) {
-//      showTime();
-//    } else if (slideLocalInfo == 1) {
-//      showTemperature();
-//    }
+    if (slideLocalInfo == 0) {
+      showTime();
+    } else if (slideLocalInfo == 1) {
+      showTemperature();
+    }
   } else if (btn == 0 && btnFlag == 1) {
     btnFlag = 0;
   } // END OF Button handler
@@ -327,12 +317,12 @@ void loop() {
     secondNum = rtcExactTime.Second();
 
     if (secondNum == 0) {
-//      if (slideLocalInfo == 0) {
-//        showTime();
-//      } else if (slideLocalInfo == 1) {
-//        rtcTemperature = rtcObject.GetTemperature();
-//        showTemperature();
-//      }
+      if (slideLocalInfo == 0) {
+        showTime();
+      } else if (slideLocalInfo == 1) {
+        rtcTemperature = rtcObject.GetTemperature();
+        showTemperature();
+      }
 
       // Show light intens every minute
       Serial.print("Brightness>>>");
@@ -347,11 +337,11 @@ void loop() {
       }
     }
 
-//    if (slideLocalInfo == 0) {
-//      lcd.setCursor(2, 0);
-//      lcd.print(blinkCursor ? ":" : " ");
-//      blinkCursor = !blinkCursor;
-//    }
+    if (slideLocalInfo == 0) {
+      lcd.setCursor(2, 0);
+      lcd.print(blinkCursor ? ":" : " ");
+      blinkCursor = !blinkCursor;
+    }
   } // END OF Every second cycle
 
   // Every 2 seconds cycle
@@ -359,7 +349,7 @@ void loop() {
     lastTwoSeconds = clockGen;
 
 //    updateSlider();
-    dailyTempObj.showWeatherInfo(slide);
+    dailyTempObj.showWeatherInfo(slide, lcd);
     if (slide++ == 3) {
       slide = 0;
     }

@@ -12,15 +12,14 @@ const char* cityid = "702550"; // Lviv id for weather API
 #include <ESP8266HTTPClient.h>
 HTTPClient http;
 
-DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile, LiquidCrystal_I2C lcd)
+DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile)
 :
   _indicator(indicator),
-  _weatherFile(weatherFile),
-  _lcd(lcd)
+  _weatherFile(weatherFile)
 {
 }
 
-void DAILYTEMPERATURE::showWeatherInfo(byte slide) {
+void DAILYTEMPERATURE::showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd) {
   switch (slide) {
     case 0:
       _lcd.setCursor(0, 1);
@@ -176,7 +175,6 @@ boolean DAILYTEMPERATURE::getWeatherDailyCondition(byte time) {
 
     weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
     stat = 1;
-
     
     pushDataToFile(time);
 
