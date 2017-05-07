@@ -29,53 +29,14 @@
 // difference between 1970-01-01 00:00:00 and 2000-01-01 00:00:00
 // is 946684800
 
+#ifndef CURRENTTIME_H
+#define CURRENTTIME_H
 #define TIME_DIFF_2000 946684800
 
-const char* timeZoneApi = "http://api.timezonedb.com/v2";
-const char* zone = "Europe/Kiev"; // Kyiv title for time zone API
-//const char* timeZoneApiId = "............"; // time zone API key
-// OR FILE WITH SAME TOKENS:
-#include "timeZoneApiToken.h";
-
-HTTPClient http2;
-
-class currentTime {
-
+class CURRENTTIME {
   public:
-  currentTime() {}
-
-  /**
-   * GET LOCAL TIME
-   */
-  int getLocalTime() {
-    Serial.println("\nGETTING LOCAL TIME (timestamp): ");
-
-    int returnTime = 0;
-    
-    char req[100];
-    strcpy(req, timeZoneApi);
-    strcat(req, "/get-time-zone?key=");
-    strcat(req, timeZoneApiId);
-    strcat(req, "&format=json&by=zone&zone=");
-    strcat(req, zone);
-
-    http2.begin(req);
-    int httpCode = http2.GET();
-    if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
-      String response = http2.getString();
-      Serial.println(response);
-  
-      StaticJsonBuffer<2000> jsonBuffer;
-      JsonObject& root = jsonBuffer.parseObject(response);
-  
-      if (!root.success()) {
-        Serial.println("parseObject() failed");
-        return 0;
-      }
-
-      returnTime = root["timestamp"];
-    }
-    http2.end();
-    return returnTime;
-  }
+  CURRENTTIME();
+  int getLocalTime();
 };
+
+#endif

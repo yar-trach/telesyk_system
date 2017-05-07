@@ -7,17 +7,12 @@ const char* cityid = "702550"; // Lviv id for weather API
 #include <SD.h>
 #include <LiquidCrystal_I2C.h>
 #include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
 #include "ledrgb.h";
 #include "dailyTemperature.h";
-#include <ESP8266HTTPClient.h>
 HTTPClient http;
 
-DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile)
-:
-  _indicator(indicator),
-  _weatherFile(weatherFile)
-{
-}
+DAILYTEMPERATURE::DAILYTEMPERATURE(){}
 
 void DAILYTEMPERATURE::showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd) {
   switch (slide) {
@@ -47,7 +42,7 @@ void DAILYTEMPERATURE::showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd) {
   }
 }
 
-void DAILYTEMPERATURE::pushDataToFile(byte time) {
+void DAILYTEMPERATURE::pushDataToFile(byte time, File &_weatherFile) {
   StaticJsonBuffer<200> outputJsonBuffer;
   JsonObject& rootOutput = outputJsonBuffer.createObject();
   rootOutput["hour"] = time;
@@ -89,7 +84,7 @@ void DAILYTEMPERATURE::pushDataToFile(byte time) {
   }
 }
 
-boolean DAILYTEMPERATURE::getWeatherCurrentCondition() {
+boolean DAILYTEMPERATURE::getWeatherCurrentCondition(LEDRGB &_indicator) {
   Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
   //led busy on
   boolean stat = 0;
@@ -126,10 +121,7 @@ boolean DAILYTEMPERATURE::getWeatherCurrentCondition() {
   return stat;
 }
 
-/**
- * GETTING DAILY WEATHER CONDITIONS
- */
-boolean DAILYTEMPERATURE::getWeatherDailyCondition(byte time) {
+boolean DAILYTEMPERATURE::getWeatherDailyCondition(byte time, File &_weatherFile) {
   Serial.println("\nDAILY WEATHER CONDITIONS (every 3 hours)");
 
   boolean stat = 0;
@@ -178,7 +170,7 @@ boolean DAILYTEMPERATURE::getWeatherDailyCondition(byte time) {
     weatherDescription = String((const char*)root["list"][0]["weather"][0]["description"]);
     stat = 1;
     
-    pushDataToFile(time);
+    pushDataToFile(time, _weatherFile);
 
     Serial.println("\ntempMorning:" + String(tempMorning) + "\ntempDay:" + String(tempDay) + "\ntempEvening:" + String(tempEvening) + "\ntempNight:" + String(tempNight) + "\nweatherDescription:" + weatherDescription);
   }

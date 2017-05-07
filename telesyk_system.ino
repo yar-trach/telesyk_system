@@ -1,6 +1,6 @@
 /**
  * File with id and password to access to wifi point
-#define SSID_PASS 4 // size of ssid and pass
+#define SSID_PASS 4 // size of ssid and pass (including ssids' and passwords for them
 
 const char* ssidpass[SSID_PASS] = {
   "...", // ssid name of first point
@@ -9,9 +9,10 @@ const char* ssidpass[SSID_PASS] = {
   "...", // ssid name of second point
   "..."  // password of second point
 };
+// Here we have 2 WiFi access poins, so SSID_PASS = 4
  */
-
-#include "ssidpassword.h"
+// Uncomment text above or use file below for presenting WiFi access point for a program
+#include "ssidpassword.h" // file with Wifi access points and passwords for them
 
 #include <RtcDateTime.h> // https://github.com/Makuna/Rtc
 #include <RtcUtility.h>
@@ -22,13 +23,8 @@ const char* ssidpass[SSID_PASS] = {
 #include <SPI.h>
 
 #include <SD.h>
-
 #include <LiquidCrystal_I2C.h>
-
-#include <ArduinoJson.h>
-
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
 
 #include "dailyTemperature.h"
 #include "currentTime.h"
@@ -69,8 +65,8 @@ boolean busyFlag = 0;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
-DAILYTEMPERATURE dailyTempObj(indicator, weatherFile);
-currentTime currentTimeObj = currentTime();
+DAILYTEMPERATURE dailyTempObj;
+CURRENTTIME currentTimeObj;
 
 RtcDS3231<TwoWire> rtcObject(Wire);
 RtcDateTime rtcExactTime;
@@ -81,10 +77,6 @@ void setup() {
   delay(10);
 
   Serial.println("\nBooting");
-
-  // Wifi LED   
-//  pinMode(ONBOARD_LED_PIN, OUTPUT);
-//  digitalWrite(ONBOARD_LED_PIN, !LOW);
 
   // Photocell
   pinMode(PHOTOCELL_PIN, INPUT);
@@ -162,7 +154,7 @@ void setup() {
   lcd.print("WIFI CONNECTED  ");
   Serial.println("\nWiFi connected");
 
-  // Compiling RTC. Or not
+  // Compiling RTC
   rtcObject.Begin();
 
   RtcDateTime compiledDateTime(__DATE__, __TIME__);
@@ -229,7 +221,7 @@ void setup() {
   // Get current weather condition
   boolean gotWeatherCurrent = false;
   while(!gotWeatherCurrent) {
-    gotWeatherCurrent = dailyTempObj.getWeatherCurrentCondition();
+    gotWeatherCurrent = dailyTempObj.getWeatherCurrentCondition(indicator);
 
 //    blinkOnboardLed();
 
@@ -248,7 +240,7 @@ void setup() {
   // Get daily weather
   boolean gotWeatherDaily = false;
   while(!gotWeatherDaily) {
-    gotWeatherDaily = dailyTempObj.getWeatherDailyCondition(hourNum);
+    gotWeatherDaily = dailyTempObj.getWeatherDailyCondition(hourNum, weatherFile);
 
 //    blinkOnboardLed();
 
@@ -326,7 +318,7 @@ void loop() {
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
 //        if (hourNum == 3 || hourNum == 6 || hourNum ==  9 || hourNum ==  12 || hourNum ==  15 || hourNum ==  18 || hourNum ==  21 || hourNum ==  0) {
-          dailyTempObj.getWeatherDailyCondition(hourNum);
+          dailyTempObj.getWeatherDailyCondition(hourNum, weatherFile);
 //        }
       }
     }
@@ -353,7 +345,7 @@ void loop() {
     lastTenMinutes = clockGen;
 
     // update current weather condition
-    dailyTempObj.getWeatherCurrentCondition();
+    dailyTempObj.getWeatherCurrentCondition(indicator);
   } // END OF Every ten minuter cycle
 }
 /**
@@ -374,18 +366,11 @@ void checkBusy() {
   numberOfTry = 0;
 }
 
-
-/**
- * SHOWING TIME
- */
 void showTime() {
   lcd.setCursor(0, 0);
   lcd.print(String(hourNum < 10 ? "0" : "") + String(hourNum) + String(blinkCursor ? ":" : " ") + String(minuteNum < 10 ? "0" : "") + String(minuteNum));
 }
 
-/**
- * SHOWING TEMPERATURE
- */
 void showTemperature() {
   lcd.setCursor(0, 0);
   lcd.print(String(rtcTemperature.AsWholeDegrees() > 0 ? "+" : "-") + String(rtcTemperature.AsWholeDegrees() < 10 ? "0" : "") + rtcTemperature.AsWholeDegrees() + "C" + String((char)223));
