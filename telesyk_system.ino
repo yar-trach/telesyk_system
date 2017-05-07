@@ -77,7 +77,7 @@ boolean busyFlag = 0;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
-DAILYTEMPERATURE dailyTempObj(indicator, weatherFile);
+DAILYTEMPERATURE dailyTempObj(indicator, weatherFile, lcd);
 currentTime currentTimeObj = currentTime();
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -300,11 +300,11 @@ void loop() {
     slideLocalInfo = !slideLocalInfo;
     lastButtonPressed = clockGen;
 
-    if (slideLocalInfo == 0) {
-      showTime();
-    } else if (slideLocalInfo == 1) {
-      showTemperature();
-    }
+//    if (slideLocalInfo == 0) {
+//      showTime();
+//    } else if (slideLocalInfo == 1) {
+//      showTemperature();
+//    }
   } else if (btn == 0 && btnFlag == 1) {
     btnFlag = 0;
   } // END OF Button handler
@@ -327,12 +327,12 @@ void loop() {
     secondNum = rtcExactTime.Second();
 
     if (secondNum == 0) {
-      if (slideLocalInfo == 0) {
-        showTime();
-      } else if (slideLocalInfo == 1) {
-        rtcTemperature = rtcObject.GetTemperature();
-        showTemperature();
-      }
+//      if (slideLocalInfo == 0) {
+//        showTime();
+//      } else if (slideLocalInfo == 1) {
+//        rtcTemperature = rtcObject.GetTemperature();
+//        showTemperature();
+//      }
 
       // Show light intens every minute
       Serial.print("Brightness>>>");
@@ -347,18 +347,22 @@ void loop() {
       }
     }
 
-    if (slideLocalInfo == 0) {
-      lcd.setCursor(2, 0);
-      lcd.print(blinkCursor ? ":" : " ");
-      blinkCursor = !blinkCursor;
-    }
+//    if (slideLocalInfo == 0) {
+//      lcd.setCursor(2, 0);
+//      lcd.print(blinkCursor ? ":" : " ");
+//      blinkCursor = !blinkCursor;
+//    }
   } // END OF Every second cycle
 
   // Every 2 seconds cycle
   if (clockGen - lastTwoSeconds >= TWO_SECOND_INTERVAL) {
     lastTwoSeconds = clockGen;
 
-    updateSlider();
+//    updateSlider();
+    dailyTempObj.showWeatherInfo(slide);
+    if (slide++ == 3) {
+      slide = 0;
+    }
   } // END OF Every 2 seconds cycle
 
   // Every ten minuter cycle
@@ -388,51 +392,6 @@ void checkBusy() {
   numberOfTry = 0;
 }
 
-//void getSlideTopRight(DAILYTEMPERATURE dailyTempObj) {
-//  slideTopRight1 = dailyTempObj.getCurrentTemp();
-//  slideTopRight2 = dailyTempObj.getCurrentHumidity();
-//  slideTopRight3 = dailyTempObj.getCurrentWeather();
-//}
-//
-//void getSlideBottom(DAILYTEMPERATURE dailyTempObj) {
-//  slideBottom1 = dailyTempObj.getMorDayTemp();
-//  slideBottom2 = dailyTempObj.getEveNigTemp();
-//  slideBottom3 = dailyTempObj.getWeatherDescription();
-//}
-
-/**
- * UPDATING LCD
- */
-void updateSlider() {
-  switch (slide) {
-    case 0:
-      lcd.setCursor(0, 1);
-      lcd.print(slideBottom1);
-
-      lcd.setCursor(9, 0);
-      lcd.print(slideTopRight1 + "  ");
-    break;
-    case 1:
-      lcd.setCursor(0, 1);
-      lcd.print(slideBottom2);
-
-      lcd.setCursor(9, 0);
-      lcd.print(slideTopRight2 + "  ");
-    break;
-    case 2:
-      lcd.setCursor(0, 1);
-      lcd.print(slideBottom3 + "         ");
- 
-      lcd.setCursor(9, 0);
-      lcd.print(slideTopRight3 + "  ");
-    break;
-  }
-
-  // 0, 1, 2, 3 (for 3)
-  if (slide++ == 3) {
-    slide = 0;
-  }
-}
 
 /**
  * SHOWING TIME

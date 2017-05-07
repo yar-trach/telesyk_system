@@ -5,18 +5,45 @@ const char* cityid = "702550"; // Lviv id for weather API
 #include "openWeatherMapApiToken.h";
 
 #include <SD.h>
+#include <LiquidCrystal_I2C.h>
 #include <ArduinoJson.h>
 #include "ledrgb.h";
 #include "dailyTemperature.h";
 #include <ESP8266HTTPClient.h>
 HTTPClient http;
 
-DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile)
+DAILYTEMPERATURE::DAILYTEMPERATURE(LEDRGB indicator, File weatherFile, LiquidCrystal_I2C lcd)
 :
-  indicator(indicator),
-  weatherFile(weatherFile)
+  _indicator(indicator),
+  _weatherFile(weatherFile),
+  _lcd(lcd)
 {
-  indicator.changeColor(0);
+}
+
+void DAILYTEMPERATURE::showWeatherInfo(byte slide) {
+  switch (slide) {
+    case 0:
+      _lcd.setCursor(0, 1);
+      _lcd.print("sb1");//slideBottom1
+
+      _lcd.setCursor(9, 0);
+      _lcd.print("str1");//slideTopRight1 + "  "
+    break;
+    case 1:
+      _lcd.setCursor(0, 1);
+      _lcd.print("sb2");//slideBottom2
+
+      _lcd.setCursor(9, 0);
+      _lcd.print("str2");//slideTopRight2 + "  "
+    break;
+    case 2:
+      _lcd.setCursor(0, 1);
+      _lcd.print("sb3");//slideBottom3 + "         "
+ 
+      _lcd.setCursor(9, 0);
+      _lcd.print("str3");//slideTopRight3 + "  "
+    break;
+  }
 }
 
 void DAILYTEMPERATURE::pushDataToFile(byte time) {
@@ -32,12 +59,12 @@ void DAILYTEMPERATURE::pushDataToFile(byte time) {
   rootOutput.printTo(buffer, sizeof(buffer));
   
   // If success, add weather line to fine
-  weatherFile = SD.open("weather.txt", FILE_WRITE);
-  if (weatherFile) {
+  _weatherFile = SD.open("weather.txt", FILE_WRITE);
+  if (_weatherFile) {
     Serial.print("Writing to weather.txt...");
-    weatherFile.println(buffer);
+    _weatherFile.println(buffer);
     // close the file:
-    weatherFile.close();
+    _weatherFile.close();
     Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
@@ -45,25 +72,22 @@ void DAILYTEMPERATURE::pushDataToFile(byte time) {
   } // END OF If success, add weather line to fine
   
   // re-open the file for reading:
-  weatherFile = SD.open("weather.txt");
-  if (weatherFile) {
+  _weatherFile = SD.open("weather.txt");
+  if (_weatherFile) {
     Serial.println("weather.txt:");
   
     // read from the file until there's nothing else in it:
-    while (weatherFile.available()) {
-      Serial.write(weatherFile.read());
+    while (_weatherFile.available()) {
+      Serial.write(_weatherFile.read());
     }
     // close the file:
-    weatherFile.close();
+    _weatherFile.close();
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening weather.txt");
   }
 }
 
-/**
- * GETTINT CURRENT WEATHER CONDITION
- */
 boolean DAILYTEMPERATURE::getWeatherCurrentCondition() {
   Serial.println("\nCURRENT WEATHER CONDITION (every 10 minutes)");
   //led busy on
@@ -93,7 +117,7 @@ boolean DAILYTEMPERATURE::getWeatherCurrentCondition() {
     currentHumidity = root["main"]["humidity"];
     currentWeather = String((const char*)root["weather"][0]["main"]);
 
-    indicator.changeColor(tempCurrent);
+    _indicator.changeColor(tempCurrent);
     stat = 1;
   }
   http.end();

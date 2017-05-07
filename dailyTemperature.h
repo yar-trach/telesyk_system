@@ -1,13 +1,14 @@
 #ifndef DAILYTEMPERATURE_H
 #define DAILYTEMPERATURE_H
 #include "ledrgb.h";
-#include <SD.h>
+//#include <SD.h>
 
 class DAILYTEMPERATURE {
   public:
-  DAILYTEMPERATURE(LEDRGB indicator, File weatherFile);
+  DAILYTEMPERATURE(LEDRGB indicator, File weatherFile, LiquidCrystal_I2C lcd);
   boolean getWeatherCurrentCondition();
   boolean getWeatherDailyCondition(byte time);
+  void showWeatherInfo(byte slide);
 
   private:
   int8_t tempCurrent = 0;
@@ -20,8 +21,10 @@ class DAILYTEMPERATURE {
   String weatherDescription;
   byte currentHumidity;
   
-  LEDRGB indicator;
-  File weatherFile;
+  LEDRGB _indicator;
+  File _weatherFile;
+  LiquidCrystal_I2C _lcd;
+  
   void pushDataToFile(byte time);
 };
 
