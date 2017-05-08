@@ -1,3 +1,3 @@
-ssidpassword.h
-openWeatherMapApiToken.h
-timeZoneApiToken.h
+weather_station/ssidpassword.h
+weather_station/openWeatherMapApiToken.h
+weather_station/timeZoneApiToken.h
