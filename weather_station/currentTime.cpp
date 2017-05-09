@@ -9,9 +9,9 @@ const char* zone = "Europe/Kiev"; // Kyiv title for time zone API
 #include <ESP8266HTTPClient.h>
 HTTPClient httpCliCurrentTime;
 
-CURRENTTIME::CURRENTTIME(){}
+CURRENTTIME::CURRENTTIME(void){}
 
-int CURRENTTIME::getLocalTime() {
+int CURRENTTIME::getLocalTime(void) {
   Serial.println("\nGETTING LOCAL TIME (timestamp): ");
 
   int returnTime = 0;

@@ -12,7 +12,7 @@ const char* cityid = "702550"; // Lviv id for weather API
 #include "dailyTemperature.h";
 HTTPClient http;
 
-DAILYTEMPERATURE::DAILYTEMPERATURE(){}
+DAILYTEMPERATURE::DAILYTEMPERATURE(void){}
 
 void DAILYTEMPERATURE::showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd) {
   switch (slide) {

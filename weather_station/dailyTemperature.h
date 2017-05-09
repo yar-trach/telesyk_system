@@ -4,7 +4,7 @@
 
 class DAILYTEMPERATURE {
   public:
-  DAILYTEMPERATURE();
+  DAILYTEMPERATURE(void);
   boolean getWeatherCurrentCondition(LEDRGB &_indicator);
   boolean getWeatherDailyCondition(byte time, File &_weatherFile);
   void showWeatherInfo(byte slide, LiquidCrystal_I2C &_lcd);

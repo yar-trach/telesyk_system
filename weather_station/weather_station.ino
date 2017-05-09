@@ -29,6 +29,7 @@ const char* ssidpass[SSID_PASS] = {
 #include "dailyTemperature.h"
 #include "currentTime.h"
 #include "ledrgb.h";
+#include "window_master.h";
 
 unsigned long clockGen = 0;
 unsigned long lastQuickCycle = 0;
@@ -62,11 +63,14 @@ boolean blinkCursor = 1;
 boolean btnFlag = 0;
 boolean busyFlag = 0;
 
+int transFlag = 0;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
 DAILYTEMPERATURE dailyTempObj;
 CURRENTTIME currentTimeObj;
+WINDOW_MASTER window(8);
 
 RtcDS3231<TwoWire> rtcObject(Wire);
 RtcDateTime rtcExactTime;
@@ -333,6 +337,9 @@ void loop() {
   // Every 2 seconds cycle
   if (clockGen - lastTwoSeconds >= TWO_SECOND_INTERVAL) {
     lastTwoSeconds = clockGen;
+
+    transFlag = !transFlag;
+    window.sendCommand(transFlag);
 
     dailyTempObj.showWeatherInfo(slide, lcd);
     if (slide++ == 3) {

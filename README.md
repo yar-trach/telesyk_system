@@ -1,6 +1,11 @@
 # Telesyk System.
 ### Smart house system. Hardware part.
 
+
+### Assembled TS. It combining Weather and Window systems. 
+![alt tag](scheme/telesyk_system_bb.png)
+
+
 ## Weather station
 ![alt tag](scheme/weather_station_bb.png)
 

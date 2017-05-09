@@ -35,8 +35,8 @@
 
 class CURRENTTIME {
   public:
-  CURRENTTIME();
-  int getLocalTime();
+  CURRENTTIME(void);
+  int getLocalTime(void);
 };
 
 #endif
