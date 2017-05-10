@@ -6,6 +6,7 @@ class WINDOW_SLAVE {
   WINDOW_SLAVE(void);
   void init(int address);
   static void receiveEvent(int command);
+  int getPosition(void);
 
   private:
   static int _shutterPosition;

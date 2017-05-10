@@ -18,13 +18,17 @@ static void WINDOW_SLAVE::receiveEvent(int command) {
     int command = Wire.read();
 
     if (command != _shutterPosition) {
-      if (command > _shutterPosition) {
-        // step forward
-      } else if (command < _shutterPosition) {
-        // step back
-      }
+//      if (command > _shutterPosition) {
+//        // step forward
+//      } else if (command < _shutterPosition) {
+//        // step back
+//      }
       _shutterPosition = command;
     }
   }
+}
+
+int WINDOW_SLAVE::getPosition(void) {
+  return _shutterPosition;
 }
 
