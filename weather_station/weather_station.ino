@@ -40,7 +40,6 @@ unsigned long lastButtonPressed = 0;
 
 #define PHOTOCELL_PIN       A0 // ADC0
 #define BTN_SWITCH_PIN      D3 // GPIO0
-//#define ONBOARD_LED_PIN     D4 // GPIO2 (inversed)
 #define MICRO_SD_PIN        D8 // GPIO15
 #define RED_LED_PIN         10 // SD3 (GPIO10) - can't recognise SD3 like pin number
 #define GREEN_LED_PIN       D4 // GPIO2
@@ -53,24 +52,25 @@ unsigned long lastButtonPressed = 0;
 #define TEN_MINUTES_INTERVAL    600000  // 10 min
 
 uint8_t slide = 0;
-uint8_t slideLocalInfo = 0;
+uint8_t localInfo = 0;
 uint8_t hourNum;
 uint8_t minuteNum;
 uint8_t secondNum;
 uint8_t numberOfTry = 0;
+uint8_t shutterPosition = 0;
 
 boolean blinkCursor = 1;
 boolean btnFlag = 0;
 boolean busyFlag = 0;
 
-int transFlag = 0;
+uint8_t brightness = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 File weatherFile;
 LEDRGB indicator(RED_LED_PIN, GREEN_LED_PIN, BLUE_LED_PIN);
 DAILYTEMPERATURE dailyTempObj;
 CURRENTTIME currentTimeObj;
-WINDOW_MASTER window(8);
+WINDOW_MASTER window(0x08);
 
 RtcDS3231<TwoWire> rtcObject(Wire);
 RtcDateTime rtcExactTime;
@@ -278,13 +278,18 @@ void loop() {
   boolean btn = !digitalRead(BTN_SWITCH_PIN);
   if (btn == 1 && btnFlag == 0 && clockGen - lastButtonPressed > BTN_DEBOUNCE_TIME) {
     btnFlag = 1;
-    slideLocalInfo = !slideLocalInfo;
+    
+    localInfo++;
+    if (localInfo == 3) localInfo = 0;
+    
     lastButtonPressed = clockGen;
 
-    if (slideLocalInfo == 0) {
+    if (localInfo == 0) {
       showTime();
-    } else if (slideLocalInfo == 1) {
+    } else if (localInfo == 1) {
       showTemperature();
+    } else if (localInfo == 2) {
+      showBrightness();
     }
   } else if (btn == 0 && btnFlag == 1) {
     btnFlag = 0;
@@ -308,16 +313,18 @@ void loop() {
     secondNum = rtcExactTime.Second();
 
     if (secondNum == 0) {
-      if (slideLocalInfo == 0) {
+      if (localInfo == 0) {
         showTime();
-      } else if (slideLocalInfo == 1) {
+      } else if (localInfo == 1) {
+        // Get local temperature (in room)
         rtcTemperature = rtcObject.GetTemperature();
         showTemperature();
+      } else if (localInfo == 2) {
+        // Get light intens every minute
+        brightness = analogRead(PHOTOCELL_PIN);
+        shutterPosition = window.shutterPosition(brightness);
+        showBrightness();
       }
-
-      // Show light intens every minute
-      Serial.print("Brightness>>>");
-      Serial.println(analogRead(PHOTOCELL_PIN));
 
       if (minuteNum == 0) {
         // should be rewriten by using interrupt with SQW pin (using 6-pin DS3231) and alarms
@@ -327,7 +334,7 @@ void loop() {
       }
     }
 
-    if (slideLocalInfo == 0) {
+    if (localInfo == 0) {
       lcd.setCursor(2, 0);
       lcd.print(blinkCursor ? ":" : " ");
       blinkCursor = !blinkCursor;
@@ -337,9 +344,6 @@ void loop() {
   // Every 2 seconds cycle
   if (clockGen - lastTwoSeconds >= TWO_SECOND_INTERVAL) {
     lastTwoSeconds = clockGen;
-
-    transFlag = !transFlag;
-    window.sendCommand(transFlag);
 
     dailyTempObj.showWeatherInfo(slide, lcd);
     if (slide++ == 3) {
@@ -381,5 +385,10 @@ void showTime() {
 void showTemperature() {
   lcd.setCursor(0, 0);
   lcd.print(String(rtcTemperature.AsWholeDegrees() > 0 ? "+" : "-") + String(rtcTemperature.AsWholeDegrees() < 10 ? "0" : "") + rtcTemperature.AsWholeDegrees() + "C" + String((char)223));
+}
+
+void showBrightness() {
+  lcd.setCursor(0, 0);
+  lcd.print(String(brightness) + "(" + shutterPosition + ")");
 }
 

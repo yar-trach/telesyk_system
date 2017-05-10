@@ -11,11 +11,11 @@ WINDOW_SLAVE window;
 
 void setup(){
   stepper.setSpeed(16); // 16 revolutions per minute
-  window.init(8); // init window slave handler at address "8"
+  window.init(0x08); // init window slave handler at address "8"
 }
 void loop(){
-  stepper.run(3000);
-  delay(3000);
-  stepper.run(-3000);
-  delay(3000);
+  stepper.run(300);
+  delay(5000);
+  stepper.run(-300);
+  delay(5000);
 }

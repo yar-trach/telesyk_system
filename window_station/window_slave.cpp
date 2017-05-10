@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include "window_slave.h";
 
+int WINDOW_SLAVE::_shutterPosition;
+
 WINDOW_SLAVE::WINDOW_SLAVE(void) {
   pinMode(13, OUTPUT);
 }
@@ -13,11 +15,15 @@ void WINDOW_SLAVE::init(int address) {
 
 static void WINDOW_SLAVE::receiveEvent(int command) {
   while (Wire.available()) {
-    char c = Wire.read();
-    if (c == 1) {
-      digitalWrite(13, LOW);
-    } else {
-      digitalWrite(13, HIGH);
+    int command = Wire.read();
+
+    if (command != _shutterPosition) {
+      if (command > _shutterPosition) {
+        // step forward
+      } else if (command < _shutterPosition) {
+        // step back
+      }
+      _shutterPosition = command;
     }
   }
 }

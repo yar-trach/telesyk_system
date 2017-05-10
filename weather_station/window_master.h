@@ -5,6 +5,9 @@ class WINDOW_MASTER {
   public:
   WINDOW_MASTER(int address);
   void sendCommand(int command);
+  int shutterPosition(int brightness);
+
+  int _shutterPosition;
 
   private:
   int _address;

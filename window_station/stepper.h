@@ -28,7 +28,7 @@
 
 class STEPPER {
   public:
-  STEPPER(int totalNumberOfSteps, int pinIn1, int pinIn2, int pinIn3, int pinIn4);  
+  STEPPER(int totalNumberOfSteps, int pinIn1, int pinIn2, int pinIn3, int pinIn4);
   void run(int stepsToRun);
   void setSpeed(int rev);
 

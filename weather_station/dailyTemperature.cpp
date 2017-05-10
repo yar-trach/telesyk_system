@@ -67,21 +67,21 @@ void DAILYTEMPERATURE::pushDataToFile(byte time, File &_weatherFile) {
     Serial.println("error opening weather.txt");
   } // END OF If success, add weather line to fine
   
-  // re-open the file for reading:
-  _weatherFile = SD.open("weather.txt");
-  if (_weatherFile) {
-    Serial.println("weather.txt:");
-  
-    // read from the file until there's nothing else in it:
-    while (_weatherFile.available()) {
-      Serial.write(_weatherFile.read());
-    }
-    // close the file:
-    _weatherFile.close();
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening weather.txt");
-  }
+//  // re-open the file for reading:
+//  _weatherFile = SD.open("weather.txt");
+//  if (_weatherFile) {
+//    Serial.println("weather.txt:");
+//  
+//    // read from the file until there's nothing else in it:
+//    while (_weatherFile.available()) {
+//      Serial.write(_weatherFile.read());
+//    }
+//    // close the file:
+//    _weatherFile.close();
+//  } else {
+//    // if the file didn't open, print an error:
+//    Serial.println("error opening weather.txt");
+//  }
 }
 
 boolean DAILYTEMPERATURE::getWeatherCurrentCondition(LEDRGB &_indicator) {
