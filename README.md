@@ -21,7 +21,9 @@
 >* Button               - button for switching between modes
 >* RGB LED              - RGB LED for color indication
 >* Photocell            - photoresistor for measuring light intensity
->* 4x220R               - current limiting resistors for RGB LED and pulldown resistor for photocell
+>* 1x220R               - pulldown resistor for photocell
+>* 1x200R               - current limiting resistors for RGB LED (red anode)
+>* 2x100R               - current limiting resistors for RGB LED (green and blue anodes)
 >* Wires                - connection between modules and power supply
 
 ## Window station

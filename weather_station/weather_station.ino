@@ -96,12 +96,13 @@ void setup() {
   Serial.print("Initializing SD card...");
   if (!SD.begin(MICRO_SD_PIN)) {
     Serial.println("initialization failed!");
-    return;
+
+    goto connectingToWifi;
   }
   Serial.println("initialization done.");
 
   // Scanning WiFi network
-  lcd.print("SEARCHING WIFI  ");
+  connectingToWifi: lcd.print("SEARCHING WIFI  ");
   scanNetworks: byte n = WiFi.scanNetworks();
   Serial.println("scan done");
 
